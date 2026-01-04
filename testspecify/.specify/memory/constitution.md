@@ -1,22 +1,11 @@
 <!--
 Sync Impact Report:
 
-- Version change: 0.0.0 → 1.0.0
-- Added sections:
-  - I. Code Quality
-  - II. Testing Standards
-  - III. API Consistency
-  - IV. Performance Requirements
-  - Node.js and Express.js Standards
-  - Development Workflow
-- Removed sections:
-  - [PRINCIPLE_1_NAME] to [PRINCIPLE_5_NAME]
-  - [SECTION_2_NAME]
-  - [SECTION_3_NAME]
+- Version change: 1.0.0 → 1.1.0
+- Modified principles:
+  - Added: V. Clean Architecture
 - Templates requiring updates:
   - .specify/templates/plan-template.md (⏳ pending)
-  - .specify/templates/spec-template.md (⏳ pending)
-  - .specify/templates/tasks-template.md (⏳ pending)
 - Follow-up TODOs:
   - TODO(RATIFICATION_DATE): Set the initial ratification date for this constitution.
 -->
@@ -36,6 +25,9 @@ APIs MUST follow RESTful principles. All API responses MUST use a standardized J
 ### IV. Performance Requirements
 API endpoints MUST have a defined performance budget, with a goal of responding in under 200ms for standard requests. Critical endpoints MUST undergo load testing to ensure they meet scalability requirements.
 
+### V. Clean Architecture
+The application MUST follow the principles of Clean Architecture. This means a separation of concerns, with business logic at the core, independent of frameworks and UI. Dependencies MUST point inwards, from outer layers (frameworks, UI) to inner layers (business rules, entities). This ensures the core logic is testable, reusable, and framework-agnostic.
+
 ## Node.js and Express.js Standards
 
 The project will use Node.js and Express.js. All code MUST follow best practices for these technologies, including but not limited to: asynchronous programming patterns (async/await), proper error handling in middleware, and securing the application against common vulnerabilities (e.g., XSS, CSRF).
@@ -48,4 +40,4 @@ All code changes MUST be submitted via a pull request. Pull requests MUST be rev
 
 This constitution is the single source of truth for all development practices. Any amendments to this constitution require a pull request and approval from the project maintainers.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2026-01-04
+**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2026-01-04

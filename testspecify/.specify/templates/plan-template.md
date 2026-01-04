@@ -35,6 +35,7 @@
 - **Testing Standards**: Does the plan include tasks for unit, integration, and (if necessary) end-to-end tests? Is a coverage target defined?
 - **API Consistency**: If building an API, does the plan specify RESTful principles and standardized response formats?
 - **Performance**: Are performance goals defined for critical paths?
+- **Clean Architecture**: Does the plan define clear boundaries between layers (e.g., entities, use cases, controllers, and presenters)?
 
 ## Project Structure
 

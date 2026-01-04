@@ -5,6 +5,15 @@
 **Status**: Draft
 **Input**: User description: "buatkan aplikasi restfull API untuk kwitansi digital yg nantinya dipergunakan untuk frontend android atau web yg dimana user dapat mengisi kwitansi digital, menandatangani kwitansi digital tersebut secara digital dan membuatnya dalam bentuk pdf"
 
+## Clarifications
+
+### Session 2026-01-04
+- Q: What should happen after a PDF receipt is generated? → A: Out of scope for this feature.
+- Q: What is the expected number of receipts to be created per day? → A: 100-1,000 receipts per day.
+- Q: How should receipt and signature data be stored? → A: Encrypt sensitive data (e.g., financial details, signatures) at rest.
+- Q: What level of observability is required? → A: Basic logging of requests and errors.
+- Q: Should the API implement rate limiting to prevent abuse? → A: Yes, implement basic rate limiting (e.g., per IP address).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create and Fill a Digital Receipt (Priority: P1)
@@ -56,6 +65,10 @@ Once a receipt is filled and signed, the user needs a final, non-editable versio
 -   How does the system handle network errors during PDF generation?
 -   What is the maximum size for the signature data?
 
+## Out of Scope
+
+-   Any functionality beyond generating and downloading the PDF receipt is considered out of scope for this feature. This includes, but is not limited to, sending the receipt via email, providing long-term storage of the generated PDF, or any other post-generation processing.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -71,6 +84,9 @@ Once a receipt is filled and signed, the user needs a final, non-editable versio
 -   **FR-009**: The system MUST manage digital signatures. The signature will be captured by the client (drawn on a canvas) and sent as a base64 encoded string.
 -   **FR-010**: The PDF generation service MUST use a standardized template for all receipts. A single, standard PDF template will be used for all receipts.
 -   **FR-011**: User identity must be managed by the system. Users will be authenticated using JWT tokens obtained after a login process.
+-   **FR-012**: All sensitive data (including financial details and signatures) MUST be encrypted at rest.
+-   **FR-013**: The system MUST implement basic logging for all API requests and errors.
+-   **FR-014**: The system MUST implement basic rate limiting (per IP address) to protect the API from abuse.
 
 
 ### Key Entities *(include if feature involves data)*
@@ -83,6 +99,7 @@ Once a receipt is filled and signed, the user needs a final, non-editable versio
 
 - Users will be managed by this service (i.e., there is no separate user service to integrate with).
 - The client applications (web/Android) will be responsible for capturing the signature data (e.g., as an image or vector data).
+- The system is expected to handle a data volume of 100-1,000 receipt creations per day.
 
 ## Success Criteria *(mandatory)*
 

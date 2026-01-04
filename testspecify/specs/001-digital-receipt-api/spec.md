@@ -9,10 +9,10 @@
 
 ### Session 2026-01-04
 - Q: What should happen after a PDF receipt is generated? → A: Out of scope for this feature.
-- Q: What is the expected number of receipts to be created per day? → A: 100-1,000 receipts per day.
+- Q: What is the expected number of receipts to be created per day? → A: 10-100 receipts per day.
 - Q: How should receipt and signature data be stored? → A: Encrypt sensitive data (e.g., financial details, signatures) at rest.
 - Q: What level of observability is required? → A: Basic logging of requests and errors.
-- Q: Should the API implement rate limiting to prevent abuse? → A: Yes, implement basic rate limiting (e.g., per IP address).
+- Q: Should the API implement rate limiting to prevent abuse? → A: Yes, implement rate limiting of max 50 requests per hour per IP address.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -86,7 +86,7 @@ Once a receipt is filled and signed, the user needs a final, non-editable versio
 -   **FR-011**: User identity must be managed by the system. Users will be authenticated using JWT tokens obtained after a login process.
 -   **FR-012**: All sensitive data (including financial details and signatures) MUST be encrypted at rest.
 -   **FR-013**: The system MUST implement basic logging for all API requests and errors.
--   **FR-014**: The system MUST implement basic rate limiting (per IP address) to protect the API from abuse.
+-   **FR-014**: The system MUST implement rate limiting of max 50 requests per hour per IP address to protect the API from abuse.
 
 
 ### Key Entities *(include if feature involves data)*

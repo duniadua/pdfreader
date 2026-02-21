@@ -1,0 +1,78 @@
+name: pdf_reader_app
+description: "A local PDF reader application for Android and iOS."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # PDF Viewer
+  syncfusion_flutter_pdfviewer: ^28.1.33
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Local Storage
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.3
+
+  # File Handling
+  file_picker: ^8.1.6
+  permission_handler: ^11.3.1
+
+  # Utils
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.4.1
+  intl: ^0.20.1
+  flex_color_scheme: ^8.4.0
+
+  # Code generation
+  equatable: ^2.0.5
+  logger: ^2.5.0
+  path: ^1.9.0
+  build_runner: ^2.5.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  riverpod_generator: ^2.6.1
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+  # Testing
+  mockito: ^5.4.4
+  mocktail: ^1.0.4
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  # Fonts - commented out for testing, uncomment when font files are available
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Inter-Bold.ttf
+  #         weight: 700

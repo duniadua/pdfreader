@@ -1,0 +1,766 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_constants.dart';
+import 'providers/settings_notifier.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final state = ref.watch(settingsNotifierProvider);
+    final notifier = ref.read(settingsNotifierProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: isDark
+            ? AppConstants.backgroundDark.withValues(alpha: 0.8)
+            : AppConstants.backgroundLight.withValues(alpha: 0.8),
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Settings'),
+        centerTitle: true,
+      ),
+      body: ListView(
+        children: [
+          // Reading Preferences Section
+          _buildSectionHeader(context, 'Reading Preferences'),
+          _buildSettingsGroup(
+            context: context,
+            children: [
+              _buildFontSetting(
+                context: context,
+                fontSize: state.settings.fontSize,
+                onDecrease: () => notifier.setFontSize(state.settings.fontSize - 1),
+                onIncrease: () => notifier.setFontSize(state.settings.fontSize + 1),
+              ),
+              _buildScrollDirectionSetting(
+                context: context,
+                scrollDirection: state.settings.scrollDirection,
+                onVerticalChanged: () => notifier.setScrollDirection(ScrollDirection.vertical),
+                onHorizontalChanged: () => notifier.setScrollDirection(ScrollDirection.horizontal),
+              ),
+              _buildToggleSetting(
+                context: context,
+                icon: Icons.crop,
+                title: 'Auto-crop margins',
+                value: state.settings.autoCropMargins,
+                onChanged: (value) => notifier.setAutoCropMargins(value),
+              ),
+            ],
+          ),
+
+          // Display Section
+          _buildSectionHeader(context, 'Display'),
+          _buildSettingsGroup(
+            context: context,
+            children: [
+              _buildToggleSetting(
+                context: context,
+                icon: Icons.dark_mode,
+                title: 'Dark Mode',
+                value: state.settings.darkMode,
+                onChanged: (value) => notifier.setDarkMode(value),
+              ),
+              _buildDarkModeSetting(
+                context: context,
+                value: state.settings.darkMode,
+                onChanged: (value) => notifier.setDarkMode(value),
+              ),
+            ],
+          ),
+
+          // Account Section
+          _buildSectionHeader(context, 'Account'),
+          _buildSettingsGroup(
+            context: context,
+            children: [
+              _buildCloudSyncSetting(
+                context: context,
+                isEnabled: true,
+                value: true,
+                lastSync: '2m ago',
+                onChanged: (value) {},
+              ),
+              _buildProfileSetting(
+                context: context,
+                name: 'Alex Rivera',
+                email: 'alex.rivera@example.com',
+                onTap: () {},
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 40),
+
+          // Sign Out Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildDangerButton(
+              context: context,
+              onPressed: () {},
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'Version 4.2.0 (Build 8912)',
+              style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 10,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 32, 16, 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.5,
+          color: isDark
+              ? const Color(0xFF94A3B8)
+              : const Color(0xFF64748B),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup({
+    required BuildContext context,
+    required List<Widget> children,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E293B)
+            : const Color(0xFFE2E8F0),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: children.map((child) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 0.5),
+            child: child,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildFontSetting({
+    required BuildContext context,
+    required double fontSize,
+    required VoidCallback onDecrease,
+    required VoidCallback onIncrease,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: 56,
+      color: isDark
+          ? AppConstants.backgroundDark
+          : AppConstants.backgroundLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF282E39)
+                  : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.format_size,
+              color: isDark ? Colors.white : const Color(0xFF334155),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Text('Default Font Size'),
+          const Spacer(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildCircularIconButton(
+                context: context,
+                icon: Icons.remove,
+                onPressed: fontSize > 8 ? onDecrease : null,
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 32,
+                child: Text(
+                  fontSize.toInt().toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _buildCircularIconButton(
+                context: context,
+                icon: Icons.add,
+                onPressed: fontSize < 24 ? onIncrease : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCircularIconButton({
+    required BuildContext context,
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFCBD5E1),
+          ),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: onPressed != null
+              ? (isDark ? Colors.white : const Color(0xFF334155))
+              : (isDark ? Colors.white24 : Colors.black26),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrollDirectionSetting({
+    required BuildContext context,
+    required ScrollDirection scrollDirection,
+    required VoidCallback onVerticalChanged,
+    required VoidCallback onHorizontalChanged,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVertical = scrollDirection == ScrollDirection.vertical;
+    return Container(
+      height: 56,
+      color: isDark
+          ? AppConstants.backgroundDark
+          : AppConstants.backgroundLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF282E39)
+                  : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.unfold_more,
+              color: isDark ? Colors.white : const Color(0xFF334155),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Text('Scroll Direction'),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF282E39)
+                  : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSegmentButton(
+                  context: context,
+                  label: 'Vertical',
+                  isSelected: isVertical,
+                  onTap: onVerticalChanged,
+                ),
+                const SizedBox(width: 4),
+                _buildSegmentButton(
+                  context: context,
+                  label: 'Horizontal',
+                  isSelected: !isVertical,
+                  onTap: onHorizontalChanged,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegmentButton({
+    required BuildContext context,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? AppConstants.primaryColor : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected
+                ? (isDark ? Colors.white : AppConstants.primaryColor)
+                : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleSetting({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    String? subtitle,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: subtitle == null ? 56 : 64,
+      color: isDark
+          ? AppConstants.backgroundDark
+          : AppConstants.backgroundLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF282E39)
+                  : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: isDark ? Colors.white : const Color(0xFF334155),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: AppConstants.primaryColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          _buildCustomSwitch(
+            context: context,
+            value: value,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomSwitch({
+    required BuildContext context,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onChanged != null ? () => onChanged(!value) : null,
+      child: Opacity(
+        opacity: onChanged != null ? 1.0 : 0.5,
+        child: Container(
+          width: 51,
+          height: 31,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: value
+                ? AppConstants.primaryColor
+                : (isDark ? const Color(0xFF282E39) : const Color(0xFFCBD5E1)),
+            borderRadius: BorderRadius.circular(9999),
+          ),
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 200),
+            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              width: 27,
+              height: 27,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(9999),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDarkModeSetting({
+    required BuildContext context,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final isDark = value;
+    return Container(
+      color: isDark
+          ? AppConstants.backgroundDark
+          : AppConstants.backgroundLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF282E39)
+                      : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.brightness_6,
+                  color: isDark ? Colors.white : const Color(0xFF334155),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text('Brightness'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.light_mode,
+                size: 18,
+                color: const Color(0xFF94A3B8),
+              ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF282E39)
+                            : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(9999),
+                      ),
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 6,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 8,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 16,
+                        ),
+                        trackShape: const RectangularSliderTrackShape(),
+                        activeTrackColor: AppConstants.primaryColor,
+                        inactiveTrackColor: Colors.transparent,
+                        thumbColor: Colors.white,
+                        overlayColor: AppConstants.primaryColor.withValues(alpha: 0.2),
+                      ),
+                      child: Slider(
+                        value: brightness,
+                        onChanged: onChanged,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.light_mode,
+                size: 20,
+                color: const Color(0xFF94A3B8),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloudSyncSetting({
+    required BuildContext context,
+    required bool isEnabled,
+    required bool value,
+    required String lastSync,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: 56,
+      color: isDark
+          ? AppConstants.backgroundDark
+          : AppConstants.backgroundLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF282E39)
+                  : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.cloud_sync,
+              color: isDark ? Colors.white : const Color(0xFF334155),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cloud Sync',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  'Synced $lastSync',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppConstants.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          _buildCustomSwitch(
+            context: context,
+            value: value,
+            onChanged: isEnabled ? onChanged : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSetting({
+    required BuildContext context,
+    required String name,
+    required String email,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 64,
+        color: isDark
+            ? AppConstants.backgroundDark
+            : AppConstants.backgroundLight,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: const Icon(Icons.person, size: 24),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? AppConstants.backgroundDark
+                            : AppConstants.backgroundLight,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark
+                  ? const Color(0xFF94A3B8)
+                  : const Color(0xFF64748B),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDangerButton({
+    required BuildContext context,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.logout,
+              color: Colors.red,
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Sign Out',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

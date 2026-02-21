@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings and Customization</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="flex items-center p-4 pb-2 justify-between max-w-md mx-auto">
+<div class="text-primary flex size-12 shrink-0 items-center cursor-pointer">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios</span>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">Settings</h2>
+</div>
+</div>
+<div class="max-w-md mx-auto pb-12">
+<!-- Section: Reading Preferences -->
+<div class="px-4 pb-2 pt-4">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Reading Preferences</h3>
+</div>
+<div class="flex flex-col gap-px bg-slate-200 dark:bg-slate-800 overflow-hidden">
+<!-- Font Size -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">format_size</span>
+</div>
+<p class="text-base font-normal leading-normal flex-1 truncate">Default Font Size</p>
+</div>
+<div class="shrink-0 flex items-center gap-3">
+<button class="size-8 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<p class="text-base font-medium leading-normal w-8 text-center">14</p>
+<button class="size-8 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Page Scroll Direction -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">unfold_more</span>
+</div>
+<p class="text-base font-normal leading-normal flex-1 truncate">Scroll Direction</p>
+</div>
+<div class="shrink-0">
+<div class="flex bg-slate-100 dark:bg-[#282e39] p-1 rounded-lg">
+<button class="px-3 py-1 text-xs font-semibold rounded bg-white dark:bg-primary shadow-sm">Vertical</button>
+<button class="px-3 py-1 text-xs font-semibold rounded text-slate-500">Horizontal</button>
+</div>
+</div>
+</div>
+<!-- Auto-crop margins -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">crop</span>
+</div>
+<p class="text-base font-normal leading-normal flex-1 truncate">Auto-crop margins</p>
+</div>
+<div class="shrink-0">
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-300 dark:bg-[#282e39] p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary transition-all duration-200">
+<div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+<input checked="" class="invisible absolute" type="checkbox"/>
+</label>
+</div>
+</div>
+</div>
+<!-- Section: Display -->
+<div class="px-4 pb-2 pt-8">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Display</h3>
+</div>
+<div class="flex flex-col gap-px bg-slate-200 dark:bg-slate-800 overflow-hidden">
+<!-- Dark Mode Toggle -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">dark_mode</span>
+</div>
+<p class="text-base font-normal leading-normal flex-1 truncate">Dark Mode</p>
+</div>
+<div class="shrink-0">
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-300 dark:bg-[#282e39] p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary transition-all duration-200">
+<div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+<input checked="" class="invisible absolute" type="checkbox"/>
+</label>
+</div>
+</div>
+<!-- Brightness -->
+<div class="flex flex-col gap-2 bg-background-light dark:bg-background-dark px-4 py-4">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">brightness_6</span>
+</div>
+<p class="text-base font-normal leading-normal flex-1 truncate">Brightness</p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="material-symbols-outlined text-sm text-slate-400">light_mode</span>
+<div class="relative w-full h-1.5 bg-slate-300 dark:bg-[#282e39] rounded-full">
+<div class="absolute top-0 left-0 h-full w-3/4 bg-primary rounded-full"></div>
+<div class="absolute top-1/2 left-3/4 -translate-y-1/2 -translate-x-1/2 size-4 bg-white rounded-full shadow-lg ring-2 ring-primary"></div>
+</div>
+<span class="material-symbols-outlined text-xl text-slate-400">light_mode</span>
+</div>
+</div>
+</div>
+<!-- Section: Account -->
+<div class="px-4 pb-2 pt-8">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Account</h3>
+</div>
+<div class="flex flex-col gap-px bg-slate-200 dark:bg-slate-800 overflow-hidden">
+<!-- Sync Status -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#282e39] shrink-0 size-10">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">cloud_sync</span>
+</div>
+<div>
+<p class="text-base font-normal leading-normal">Cloud Sync</p>
+<p class="text-[10px] text-primary font-medium">Synced 2m ago</p>
+</div>
+</div>
+<div class="shrink-0">
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-300 dark:bg-[#282e39] p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary transition-all duration-200">
+<div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+<input checked="" class="invisible absolute" type="checkbox"/>
+</label>
+</div>
+</div>
+<!-- Profile Info -->
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-16 justify-between">
+<div class="flex items-center gap-4">
+<div class="relative shrink-0">
+<img alt="User Profile" class="size-10 rounded-full border border-slate-200 dark:border-slate-700" data-alt="Round user profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOIRpgeeK8P43sJRzD9vhjAugLLRk_srchttIcUn7_04kjQnoQBvBSG4qWri3uB0KDuOG5PEJxzQj1OQxzX1eakbso4MPc3zdM5P2uU-KmTq_bAaEj955PEnqg-4Eia2-93coxYmuAYEcgia-D9HRmO6djRJwpS11mFRgj-cAsbFszz4TYYZ3tW2qtv0tkI4f0hm-GZ9lgLeFfIsj08Bn066kcaRsAgU27DT8OZtPm8DNN5uIjFKbkZKfIjbFKylPnPmsyhG6AQWTE"/>
+<div class="absolute -bottom-0.5 -right-0.5 size-3.5 bg-green-500 border-2 border-background-light dark:border-background-dark rounded-full"></div>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold leading-tight">Alex Rivera</p>
+<p class="text-sm text-slate-500 dark:text-slate-400">alex.rivera@example.com</p>
+</div>
+</div>
+<div class="shrink-0">
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="mt-10 px-4">
+<button class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 text-red-500 font-semibold text-sm">
+<span class="material-symbols-outlined text-lg">logout</span>
+                Sign Out
+            </button>
+<p class="text-center text-slate-500 text-[10px] mt-6">Version 4.2.0 (Build 8912)</p>
+</div>
+</div>
+<!-- Navigation Bar (iOS Style) -->
+<div class="fixed bottom-0 left-0 right-0 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-2 pb-8 flex justify-between items-center max-w-md mx-auto z-50">
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-[10px]">Library</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px]">Search</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-[10px] font-bold">Settings</span>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Library - PDF Reader</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
+<!-- Main Container -->
+<div class="relative min-h-screen max-w-md mx-auto flex flex-col pb-24">
+<!-- Header -->
+<header class="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 pt-6 pb-2">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">person</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight">My Library</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<!-- Search Bar -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="block w-full pl-10 pr-10 py-3 bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl focus:ring-2 focus:ring-primary placeholder-slate-400 dark:placeholder-slate-500 text-sm" placeholder="Search your PDFs, folders, tags..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+<span class="material-symbols-outlined text-slate-400 text-[20px] cursor-pointer">tune</span>
+</div>
+</div>
+</header>
+<!-- Recent Section -->
+<section class="mt-4">
+<div class="flex items-center justify-between px-4 mb-3">
+<h2 class="text-lg font-bold">Recent</h2>
+<button class="text-primary text-sm font-medium">See All</button>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-4 px-4 pb-2">
+<!-- Recent Card 1 -->
+<div class="flex-none w-40 flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg bg-slate-200 dark:bg-slate-800 group">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Corporate annual report document cover page" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZQS_lItXZb0GorSFeXk6fY3-vftCBe06ZCg11Lf8c9omYlKKZMzDRk9mj5FukFLh08s1W9sfD7BrAZ9rRbnHLN-mrJ0VJ6kYvd1oLup-1W8uag_JO6eNqb10X8DNzlB6n7RyGTFmuyWKc4RPXtlHBweA5pgiAxtmRLLg4Td1QGwU5OBdvAvGsxdRaWCL3NCfab-DghsWoP_g9FuaTh5SehMDPXdr_hXfZLjakESwSuKqeC8yosOADlgeaxJBz4K9_rqsN-rWu6oq1');"></div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-primary w-2/3"></div>
+</div>
+<div class="px-1">
+<p class="text-sm font-semibold truncate">Annual Report 2023</p>
+<p class="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-medium">2 mins ago</p>
+</div>
+</div>
+<!-- Recent Card 2 -->
+<div class="flex-none w-40 flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg bg-slate-200 dark:bg-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Technical blueprint and architectural design document" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAC0eANMQKXpucRSb_GWzPSNoVe7LQu1ZW2p_fDL7IyWnGNa2F6R8QVaCmrgbAq_5wyKSYmbCVcKb69t8S55ia0QjD9XRmjT730SaFcvPJ19m0RytfhV36cltLDLaN_lcMqmRPLJkevhwHLDvHqCNKtlOJejPa8WCZG6KtpD6tt1fUI7tVzsNwBUntTG9kAlgJUi-Hkh2w6nVk_wCHT1rDdumkWqZK18fZYRuBp6wRS6bAACY4KHM2edYA7GPD8eR5Cj-EIM5zqW75W');"></div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-primary w-full"></div>
+</div>
+<div class="px-1">
+<p class="text-sm font-semibold truncate">Design Specs V2</p>
+<p class="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-medium">1 hour ago</p>
+</div>
+</div>
+<!-- Recent Card 3 -->
+<div class="flex-none w-40 flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg bg-slate-200 dark:bg-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Travel magazine or itinerary brochure layout" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBPlRi3ZoEbAWcxhDZrhErTjemthy2p_cmi307yLhAfZke21PP08OGaEPjlWsE_irBsaJRiNU5LYQHH1BunNZIlXUMHAifVtHjM4z7GWfQYAYYNqoTpExYpPBrzM64oTytfKeyw-5dz8B_T8AYhLYYcxK8uUuNmAyhgeA6ndRnP_RZoPAGEz_bxzyxdxl1Mg5pPwohD51JY5PzuIkfdBgGDZShagoiS5saVy-JQnHdxSasVRI8sHDVrFVKFBmw_iaPXZGkTNLbmkWOf');"></div>
+</div>
+<div class="px-1">
+<p class="text-sm font-semibold truncate">Travel Itinerary</p>
+<p class="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-medium">Yesterday</p>
+</div>
+</div>
+</div>
+</section>
+<!-- All Documents List -->
+<section class="mt-8 px-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-bold">All Documents</h2>
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-[20px] cursor-pointer text-primary">format_list_bulleted</span>
+<span class="material-symbols-outlined text-[20px] cursor-pointer">grid_view</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Document Item 1 -->
+<div class="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+<div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+<div class="w-full h-full bg-cover bg-center" data-alt="Contract document with signature line preview" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDKEw4r6iUTCFxso157MzbGwSkMXLguL4MhZ1R15AzloCziCMBIR9pa0E52g6idM4oJu3jnjWgzyg37_sLdMgMWTwZ0bLkshhxKKYsdBXd5P-bNAxRzxwulrCuETEZpS76edHcF5kHCkndRy5bgxRvxrY8OqDxNi9tlLgOaDKedxFseshDzEHfVDUMrzkE94udqWFagwOWHMJaBjWQVsIUdorPAIWSyyzW2HVhZr9Wftd9yC6vpHn6AU6PccvplTwtUJ92FtRCFSzqg');"></div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-semibold truncate">Service Agreement.pdf</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400">4.2 MB • Oct 24, 2023</p>
+</div>
+<button class="text-slate-400">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Document Item 2 -->
+<div class="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+<div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+<div class="w-full h-full bg-cover bg-center" data-alt="User manual cover with abstract tech icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5hd3PnkSK0iyO4zjyMOXEyh1px-lh7e5HCqcsPb1SO6zVyZD1vcElCjUPJF17bcfGN2pJw09h4hZcOEiu1mQn9stIC2dBqdwMTrE5baI9jVQUpMfxCB-E_oZgSY9OHwfc4wHE2E0HVUe-m4FiwzuLb2mm3imliooOWDczSKlstdjE2nrcxd0POp1mcxkVobCQKZo08AufnwXFZV3WuQ2UklceLVSHfGpyUZz9gg-rSY16sZGqOjlkb20Qkxpp4IOTmqcNBrKa0RrJ');"></div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-semibold truncate">User_Manual_v1.pdf</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400">12.8 MB • Oct 20, 2023</p>
+</div>
+<button class="text-slate-400">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Document Item 3 -->
+<div class="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+<div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+<div class="w-full h-full bg-cover bg-center" data-alt="Recipe book or food magazine layout" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBzZS-JPp3vnO9b0hWTBBYAZdOweOgn7mmmnINW-E7mJEHdTRqFXYzRIvvP0RYgDUNuuLBi5edGPrlTHME8HhcDTS6Q3ebT6DqbTF5tQvEiKaXVPStohPdlbekNx4sGE7qqJYIxv5AlBeNScQ9iX-kqzwOofbcCTT8jjELbhtVp8h3xvlCHXuz7hC_DR5jugs-fclx_RecMfXseAbr2IDb9Jw6ji59JEznDG6rxO-hgkpjmzB_3RQdfaIxwwq4CxhHXBSnnAphvQTZg');"></div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-semibold truncate">Holiday Recipes.pdf</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400">8.5 MB • Oct 15, 2023</p>
+</div>
+<button class="text-slate-400">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Document Item 4 -->
+<div class="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+<div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+<div class="w-full h-full flex items-center justify-center bg-primary/10">
+<span class="material-symbols-outlined text-primary">description</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-semibold truncate">Draft_Contract_Final.pdf</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400">1.1 MB • Oct 12, 2023</p>
+</div>
+<button class="text-slate-400">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-30">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 flex items-center justify-around py-3 px-6 z-40 max-w-md mx-auto">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="text-[10px] font-bold">Library</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">star</span>
+<span class="text-[10px] font-medium">Favorites</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">clock_loader_60</span>
+<span class="text-[10px] font-medium">Timeline</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">cloud</span>
+<span class="text-[10px] font-medium">Cloud</span>
+</div>
+</nav>
+</div>
+</body></html>

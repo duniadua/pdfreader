@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PDF Reader View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .ios-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        body {
+            overscroll-behavior-y: none;
+        }
+        /* Custom scrollbar for seamless PDF experience */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-white overflow-hidden">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Top Navigation Bar (iOS Style) -->
+<header class="absolute top-0 left-0 right-0 z-50 ios-blur bg-background-dark/80 px-4 pt-12 pb-3 flex items-center justify-between border-b border-white/5">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">arrow_back_ios</span>
+</button>
+<div class="flex flex-col">
+<h1 class="text-sm font-semibold leading-tight truncate max-w-[180px]">Annual_Report_2023.pdf</h1>
+<span class="text-[10px] text-white/50 uppercase tracking-widest">Read Only</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded-full hover:bg-white/10">
+<span class="material-symbols-outlined text-[24px]">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10 text-primary">
+<span class="material-symbols-outlined text-[24px] fill-current">bookmark</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10">
+<span class="material-symbols-outlined text-[24px]">more_horiz</span>
+</button>
+</div>
+</header>
+<!-- PDF Content Area -->
+<main class="flex-1 overflow-y-auto bg-[#1a1c23] pt-24 pb-40 px-4 space-y-4 snap-y snap-mandatory">
+<!-- Page 1 -->
+<div class="w-full max-w-2xl mx-auto shadow-2xl snap-center">
+<div class="aspect-[1/1.41] w-full bg-white rounded-sm overflow-hidden relative" data-alt="Cover page of a corporate annual report with blue graphics">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent"></div>
+<div class="p-12 text-black">
+<div class="w-16 h-16 bg-primary rounded-lg mb-8"></div>
+<h2 class="text-4xl font-bold mb-4">Annual Report</h2>
+<p class="text-xl text-gray-600">Fiscal Year 2023</p>
+<div class="mt-20 space-y-2">
+<div class="h-2 w-full bg-gray-100 rounded"></div>
+<div class="h-2 w-3/4 bg-gray-100 rounded"></div>
+<div class="h-2 w-1/2 bg-gray-100 rounded"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Page 2 -->
+<div class="w-full max-w-2xl mx-auto shadow-2xl snap-center">
+<div class="aspect-[1/1.41] w-full bg-white rounded-sm p-12 text-black" data-alt="Page with financial charts and analysis text">
+<h3 class="text-2xl font-bold mb-6">Financial Highlights</h3>
+<div class="grid grid-cols-2 gap-6 mb-8">
+<div class="h-32 bg-gray-50 border border-gray-100 rounded flex items-end p-2 gap-1">
+<div class="bg-primary/40 w-full h-1/2 rounded-t-sm"></div>
+<div class="bg-primary/60 w-full h-3/4 rounded-t-sm"></div>
+<div class="bg-primary w-full h-full rounded-t-sm"></div>
+</div>
+<div class="h-32 bg-gray-50 border border-gray-100 rounded flex items-center justify-center">
+<div class="w-16 h-16 border-4 border-primary rounded-full border-t-transparent"></div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="h-3 bg-gray-200 rounded w-full"></div>
+<div class="h-3 bg-gray-200 rounded w-full"></div>
+<div class="h-3 bg-gray-200 rounded w-5/6"></div>
+<div class="h-3 bg-gray-200 rounded w-full"></div>
+<div class="h-3 bg-gray-200 rounded w-4/6"></div>
+</div>
+</div>
+</div>
+<!-- Page 3 -->
+<div class="w-full max-w-2xl mx-auto shadow-2xl snap-center">
+<div class="aspect-[1/1.41] w-full bg-white rounded-sm overflow-hidden" data-alt="Full page high resolution landscape photography in the report">
+<div class="w-full h-full bg-center bg-cover" data-alt="Abstract corporate photography showing team collaboration" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYwCTozcq6G4Lw2ot5rwFVK9Wi3-lWla4RbeWEYxuUi-xVpT_pY6vkuQ-ZN1U3o2ngIu3pzTPCdy9Z5YE7jrWabM-WMnaeeIuIigKMLLpl_lA05Tw4h9B1KNnL1PK9Q5datRU1txZ0Ddz_4lnq_CQy4wPTo2H3SjjiDu7-KO7Z_IkLPil6GlmDArn2sPdu1mDZdki69j1u1mzEh-JLDg-_eUJvpV6f95mKpME1Qog1RNR2dHPM6pFjVRVa-aFc_xfKvWHJ46kCcygz');"></div>
+</div>
+</div>
+</main>
+<!-- Floating Page Indicator -->
+<div class="absolute bottom-36 left-1/2 -translate-x-1/2 z-40">
+<div class="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-medium tracking-wide">
+                1 OF 45
+            </div>
+</div>
+<!-- Bottom Controls -->
+<footer class="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center">
+<!-- Scrubber Area -->
+<div class="w-full px-6 py-4 bg-gradient-to-t from-background-dark to-transparent">
+<div class="max-w-xl mx-auto flex items-center gap-4">
+<span class="text-[10px] font-medium w-4">1</span>
+<div class="relative flex-1 h-1.5 flex items-center">
+<div class="absolute w-full h-1 bg-white/20 rounded-full"></div>
+<div class="absolute w-1/4 h-1 bg-primary rounded-full"></div>
+<div class="absolute left-1/4 -ml-2 h-4 w-4 bg-white rounded-full shadow-lg border-2 border-primary"></div>
+</div>
+<span class="text-[10px] font-medium w-4">45</span>
+</div>
+</div>
+<!-- Main Toolbar -->
+<div class="w-full bg-background-dark/95 ios-blur border-t border-white/5 px-6 pt-4 pb-10 flex justify-between items-center">
+<button class="flex flex-col items-center gap-1 group">
+<div class="p-2 rounded-lg group-active:bg-white/10">
+<span class="material-symbols-outlined text-[26px]">format_list_bulleted</span>
+</div>
+<span class="text-[9px] uppercase tracking-tighter text-white/60">Index</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="p-2 rounded-lg group-active:bg-white/10">
+<span class="material-symbols-outlined text-[26px]">brightness_medium</span>
+</div>
+<span class="text-[9px] uppercase tracking-tighter text-white/60">Light</span>
+</button>
+<div class="flex items-center bg-white/5 p-1 rounded-xl">
+<button class="px-4 py-2 rounded-lg bg-primary shadow-sm">
+<span class="material-symbols-outlined text-[22px]">dark_mode</span>
+</button>
+<button class="px-4 py-2 rounded-lg hover:bg-white/10">
+<span class="material-symbols-outlined text-[22px] text-[#D2B48C]">menu_book</span>
+</button>
+<button class="px-4 py-2 rounded-lg hover:bg-white/10">
+<span class="material-symbols-outlined text-[22px] text-gray-400">light_mode</span>
+</button>
+</div>
+<button class="flex flex-col items-center gap-1 group">
+<div class="p-2 rounded-lg group-active:bg-white/10">
+<span class="material-symbols-outlined text-[26px]">edit_note</span>
+</div>
+<span class="text-[9px] uppercase tracking-tighter text-white/60">Annotate</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="p-2 rounded-lg group-active:bg-white/10">
+<span class="material-symbols-outlined text-[26px]">ios_share</span>
+</div>
+<span class="text-[9px] uppercase tracking-tighter text-white/60">Share</span>
+</button>
+</div>
+<!-- iOS Home Indicator -->
+<div class="absolute bottom-2 w-32 h-1 bg-white/20 rounded-full"></div>
+</footer>
+</div>
+</body></html>

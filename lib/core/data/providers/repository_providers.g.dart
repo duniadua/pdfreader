@@ -26,6 +26,25 @@ final sharedPreferencesProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SharedPreferencesRef = AutoDisposeFutureProviderRef<SharedPreferences>;
+String _$thumbnailServiceHash() => r'31afdecd4cf779dee5120b7f594f21d22b980b26';
+
+/// Provider for ThumbnailService
+///
+/// Copied from [thumbnailService].
+@ProviderFor(thumbnailService)
+final thumbnailServiceProvider = AutoDisposeProvider<ThumbnailService>.internal(
+  thumbnailService,
+  name: r'thumbnailServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$thumbnailServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ThumbnailServiceRef = AutoDisposeProviderRef<ThumbnailService>;
 String _$pdfRepositoryHash() => r'35e92865b35c197d5c1ee774044ce5a9db60a164';
 
 /// Provider for PdfRepository
@@ -46,7 +65,7 @@ final pdfRepositoryProvider = AutoDisposeProvider<PdfRepository>.internal(
 // ignore: unused_element
 typedef PdfRepositoryRef = AutoDisposeProviderRef<PdfRepository>;
 String _$sharedPreferencesPdfRepositoryHash() =>
-    r'143012ec96e71fefd9b155344481f079495459ee';
+    r'b27d52e243b238973d9a36a39c165bb22aa2886e';
 
 /// Provider for PdfRepository with SharedPreferences
 ///

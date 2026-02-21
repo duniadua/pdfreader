@@ -55,6 +55,23 @@ flutter test
 flutter analyze
 ```
 
+## Fast APK Build
+
+**APK Output Location:** `build/app/outputs/flutter-apk/`
+
+```bash
+# Fastest - single architecture (arm64 for modern phones)
+flutter build apk --release --target-platform android-arm64
+
+# Split APK - smaller size, faster build
+flutter build apk --release --split-per-abi
+
+# Debug build - fastest for testing
+flutter build apk --debug --target-platform android-arm64
+```
+
+**Tip:** Gradle parallel build enabled in `android/gradle.properties` for faster builds.
+
 ## Tech Stack
 
 | Category | Package |

@@ -475,15 +475,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(width: 16),
         SizedBox(
           width: 120,
-          child: Slider(
-            value: value,
-            onChanged: onChanged,
-            min: 0.0,
-            max: 1.0,
-            divisions: 10,
-            activeTrackColor: AppTheme.primary.withValues(alpha: 0.5),
-            activeThumbColor: AppTheme.primary,
-            label: '${(value * 100).toInt()}%',
+          child: SliderTheme(
+            data: SliderThemeData(
+              trackHeight: 4,
+              activeTrackColor: AppTheme.primary.withValues(alpha: 0.5),
+              inactiveTrackColor: AppTheme.primary.withValues(alpha: 0.2),
+              thumbColor: AppTheme.primary,
+              overlayColor: AppTheme.primary.withValues(alpha: 0.1),
+              valueIndicatorColor: AppTheme.primary,
+              valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+            ),
+            child: Slider(
+              value: value,
+              onChanged: onChanged,
+              min: 0.0,
+              max: 1.0,
+              divisions: 10,
+              label: '${(value * 100).toInt()}%',
+            ),
           ),
         ),
       ],

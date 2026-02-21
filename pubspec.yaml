@@ -16,6 +16,14 @@ dependencies:
 
   # PDF Viewer
   syncfusion_flutter_pdfviewer: ^28.1.33
+  syncfusion_flutter_pdf: ^28.1.33
+
+  # PDF Thumbnails
+  pdfx: ^2.6.0
+
+  # PDF Features
+  screen_brightness: ^2.1.7
+  share_plus: ^11.0.0
 
   # State Management
   flutter_riverpod: ^2.6.1

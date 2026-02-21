@@ -6,6 +6,7 @@ import '../../utils/exceptions.dart';
 import '../../utils/logger.dart';
 import '../../utils/result.dart';
 import '../models/pdf_document.dart';
+import '../../services/thumbnail_service.dart';
 
 /// Repository interface for PDF document operations
 abstract class PdfRepository {
@@ -35,15 +36,23 @@ abstract class PdfRepository {
 
   /// Update reading progress
   Future<Result<void>> updateProgress(String documentId, int page, int scrollOffset);
+
+  /// Generate and save thumbnail for a PDF
+  Future<Result<String?>> generateThumbnail(String pdfId);
+
+  /// Update thumbnail path for a PDF
+  Future<Result<PdfDocument>> updateThumbnail(String pdfId, String? thumbnailPath);
 }
 
 /// Implementation of PdfRepository using SharedPreferences
 class SharedPreferencesPdfRepository implements PdfRepository {
-  const SharedPreferencesPdfRepository({
+  SharedPreferencesPdfRepository({
     required SharedPreferences prefs,
-  }) : _prefs = prefs;
+    ThumbnailService? thumbnailService,
+  })  : _prefs = prefs, _thumbnailService = thumbnailService ?? ThumbnailService();
 
   final SharedPreferences _prefs;
+  final ThumbnailService _thumbnailService;
 
   static const String _pdfsKey = 'pdfs';
 
@@ -231,6 +240,54 @@ class SharedPreferencesPdfRepository implements PdfRepository {
     } catch (e, st) {
       AppLogger.e('Failed to update progress', e, st);
       return Result.failure(const StorageException('Failed to update progress'), st);
+    }
+  }
+
+  @override
+  Future<Result<String?>> generateThumbnail(String pdfId) async {
+    try {
+      final pdfs = _getPdfs();
+      final index = pdfs.indexWhere((p) => p.id == pdfId);
+      if (index == -1) {
+        return Result.failure(
+          const StorageException('PDF not found'),
+        );
+      }
+      final pdf = pdfs[index];
+
+      // Generate thumbnail
+      final thumbnailPath = await _thumbnailService.generateThumbnail(pdf.filePath);
+      if (thumbnailPath != null) {
+        // Update PDF with thumbnail path
+        pdfs[index] = pdf.copyWith(thumbnailPath: thumbnailPath);
+        await _savePdfs(pdfs);
+        return Result.success(thumbnailPath);
+      }
+      return Result.success(null); // Thumbnail generation failed but no error
+    } catch (e, st) {
+      AppLogger.e('Failed to generate thumbnail', e, st);
+      return Result.failure(const StorageException('Failed to generate thumbnail'), st);
+    }
+  }
+
+  @override
+  Future<Result<PdfDocument>> updateThumbnail(String pdfId, String? thumbnailPath) async {
+    try {
+      final pdfs = _getPdfs();
+      final index = pdfs.indexWhere((p) => p.id == pdfId);
+      if (index == -1) {
+        return Result.failure(
+          const StorageException('PDF not found'),
+        );
+      }
+      final pdf = pdfs[index];
+      final updated = pdf.copyWith(thumbnailPath: thumbnailPath);
+      pdfs[index] = updated;
+      await _savePdfs(pdfs);
+      return Result.success(updated);
+    } catch (e, st) {
+      AppLogger.e('Failed to update thumbnail', e, st);
+      return Result.failure(const StorageException('Failed to update thumbnail'), st);
     }
   }
 }

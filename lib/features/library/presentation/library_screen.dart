@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -449,14 +451,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
               child: Stack(
                 children: [
-                  // PDF thumbnail (placeholder)
-                  Center(
-                    child: Icon(
-                      Icons.picture_as_pdf,
-                      size: 48,
-                      color: AppTheme.primary.withValues(alpha: 0.5),
+                  // PDF thumbnail with fallback to icon
+                  if (pdf.thumbnailPath != null && File(pdf.thumbnailPath!).existsSync())
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(pdf.thumbnailPath!),
+                        width: 160,
+                        height: 213,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Icon(
+                        Icons.picture_as_pdf,
+                        size: 48,
+                        color: AppTheme.primary.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
                   // Progress bar at bottom
                   if (pdf.progress != null)
                     Positioned(
@@ -791,13 +804,24 @@ class _DocumentListItem extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Center(
-                    child: Icon(
-                      Icons.picture_as_pdf,
-                      size: 28,
-                      color: AppTheme.primary.withValues(alpha: 0.7),
+                  if (pdf.thumbnailPath != null && File(pdf.thumbnailPath!).existsSync())
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(pdf.thumbnailPath!),
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Icon(
+                        Icons.picture_as_pdf,
+                        size: 28,
+                        color: AppTheme.primary.withValues(alpha: 0.7),
+                      ),
                     ),
-                  ),
                   if (pdf.progress != null)
                     Positioned(
                       bottom: 0,

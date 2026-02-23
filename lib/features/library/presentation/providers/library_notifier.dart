@@ -30,14 +30,14 @@ class LibraryState with _$LibraryState {
   }) = _LibraryState;
 
   factory LibraryState.initial() => const LibraryState(
-        allPdfs: [],
-        recentPdfs: [],
-        favoritePdfs: [],
-        isLoading: true,
-        isLoadingMore: false,
-        failure: null,
-        hasMore: true,
-      );
+    allPdfs: [],
+    recentPdfs: [],
+    favoritePdfs: [],
+    isLoading: true,
+    isLoadingMore: false,
+    failure: null,
+    hasMore: true,
+  );
 }
 
 /// Library state notifier
@@ -86,7 +86,9 @@ class LibraryNotifier extends _$LibraryNotifier {
       offset: 0,
       limit: CacheConfig.initialPageSize,
     );
-    final recentResult = await _repository.getRecentPdfs(limit: CacheConfig.recentCount);
+    final recentResult = await _repository.getRecentPdfs(
+      limit: CacheConfig.recentCount,
+    );
     final favoriteResult = await _repository.getFavoritePdfs();
 
     final newState = paginatedResult.when(
@@ -106,7 +108,9 @@ class LibraryNotifier extends _$LibraryNotifier {
                   failure: null,
                   hasMore: paginated.hasMore,
                 );
-                AppLogger.i('Created new state with isLoading=${resultState.isLoading}, allPdfs=${resultState.allPdfs.length}');
+                AppLogger.i(
+                  'Created new state with isLoading=${resultState.isLoading}, allPdfs=${resultState.allPdfs.length}',
+                );
                 return resultState;
               },
               failure: (error, stackTrace) {
@@ -159,7 +163,9 @@ class LibraryNotifier extends _$LibraryNotifier {
       },
     );
     state = newState;
-    AppLogger.i('Assigned new state, isLoading=${state.isLoading}, allPdfs=${state.allPdfs.length}');
+    AppLogger.i(
+      'Assigned new state, isLoading=${state.isLoading}, allPdfs=${state.allPdfs.length}',
+    );
   }
 
   /// Load more PDFs (pagination)
@@ -257,7 +263,9 @@ class LibraryNotifier extends _$LibraryNotifier {
   }
 
   Future<void> _refreshRecentPdfs() async {
-    final result = await _repository.getRecentPdfs(limit: CacheConfig.recentCount);
+    final result = await _repository.getRecentPdfs(
+      limit: CacheConfig.recentCount,
+    );
     result.when(
       success: (recentPdfs) {
         state = state.copyWith(recentPdfs: recentPdfs);
@@ -290,9 +298,7 @@ class LibraryNotifier extends _$LibraryNotifier {
       if (file.path == null) {
         state = state.copyWith(
           isLoading: false,
-          failure: const AppFailure(
-            message: 'Unable to access selected file',
-          ),
+          failure: const AppFailure(message: 'Unable to access selected file'),
         );
         return;
       }
@@ -306,9 +312,7 @@ class LibraryNotifier extends _$LibraryNotifier {
       if (!filePath.toLowerCase().endsWith('.pdf')) {
         state = state.copyWith(
           isLoading: false,
-          failure: const AppFailure(
-            message: 'Selected file is not a PDF',
-          ),
+          failure: const AppFailure(message: 'Selected file is not a PDF'),
         );
         return;
       }
@@ -336,8 +340,30 @@ class LibraryNotifier extends _$LibraryNotifier {
             failure: _handleAppFailure(error, stackTrace),
           );
         },
-        success: (_) {
+        success: (addedPdf) async {
           AppLogger.i('Successfully imported PDF: $fileName');
+          // Generate thumbnail in background
+          _repository.generateThumbnail(addedPdf.id).then((result) {
+            result.when(
+              success: (thumbnailPath) {
+                if (thumbnailPath != null) {
+                  AppLogger.i('Thumbnail generated: $thumbnailPath');
+                  // Refresh library to show thumbnail
+                  loadLibrary();
+                } else {
+                  AppLogger.w(
+                    'Thumbnail generation returned null for ${addedPdf.title}',
+                  );
+                }
+              },
+              failure: (error, stackTrace) {
+                AppLogger.e('Failed to generate thumbnail', error, stackTrace);
+                // Still load library even if thumbnail failed
+                loadLibrary();
+              },
+            );
+          });
+          // Load library immediately without waiting for thumbnail
           loadLibrary();
         },
       );

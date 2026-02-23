@@ -320,41 +320,76 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       return _buildEmptyState(tab);
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Recent Section (only for Library tab)
-          if (tab == LibraryTab.library && state.recentPdfs.isNotEmpty) ...[
-            _buildSectionHeader('Recent', onSeeAll: () {}),
-            const SizedBox(height: 12),
-            _buildRecentSection(state.recentPdfs.take(3).toList()),
-            const SizedBox(height: 24),
-          ],
-
-          // All Documents Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildSectionHeader(
-              'All Documents',
-              showViewToggle: true,
-              isGridView: _isGridView,
-              onViewToggle: () {
-                setState(() {
-                  _isGridView = !_isGridView;
-                });
-              },
+    return CustomScrollView(
+      slivers: [
+        // Recent Section (only for Library tab)
+        if (tab == LibraryTab.library && state.recentPdfs.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildSectionHeader('Recent', onSeeAll: () {}),
+                const SizedBox(height: 12),
+                _buildRecentSection(state.recentPdfs),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
 
-          // Document List/Grid
-          _isGridView
-              ? _buildDocumentGrid(pdfs)
-              : _buildDocumentList(pdfs),
-        ],
-      ),
+        // All Documents Section header
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildSectionHeader(
+                  'All Documents (${state.allPdfs.length})',
+                  showViewToggle: true,
+                  isGridView: _isGridView,
+                  onViewToggle: () {
+                    setState(() {
+                      _isGridView = !_isGridView;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+
+        // Document List/Grid
+        _isGridView
+            ? _buildDocumentGrid(pdfs)
+            : _buildDocumentList(pdfs),
+
+        // Load More indicator
+        if (state.hasMore && !state.isLoading)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: state.isLoadingMore
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: () => ref.read(libraryNotifierProvider.notifier).loadMore(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+                          foregroundColor: AppTheme.primary,
+                        ),
+                        child: const Text('Load More'),
+                      ),
+              ),
+            ),
+          ),
+
+        // Bottom spacing
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
     );
   }
 
@@ -540,33 +575,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Widget _buildDocumentList(List<PdfDocument> pdfs) {
-    return Column(
-      children: pdfs.map((pdf) => _DocumentListItem(
-        pdf: pdf,
-        onTap: () => _openPdf(pdf),
-        onFavoriteToggle: () => _toggleFavorite(pdf.id),
-        onDelete: () => _deletePdf(pdf),
-      )).toList(),
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final pdf = pdfs[index];
+          return _DocumentListItem(
+            pdf: pdf,
+            onTap: () => _openPdf(pdf),
+            onFavoriteToggle: () => _toggleFavorite(pdf.id),
+            onDelete: () => _deletePdf(pdf),
+          );
+        },
+        childCount: pdfs.length,
+      ),
     );
   }
 
   Widget _buildDocumentGrid(List<PdfDocument> pdfs) {
-    return Padding(
+    return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+      sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 0.75,
         ),
-        itemCount: pdfs.length,
-        itemBuilder: (context, index) {
-          final pdf = pdfs[index];
-          return _buildRecentCard(pdf);
-        },
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final pdf = pdfs[index];
+            return _buildRecentCard(pdf);
+          },
+          childCount: pdfs.length,
+        ),
       ),
     );
   }

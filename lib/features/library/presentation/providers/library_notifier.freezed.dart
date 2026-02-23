@@ -21,7 +21,9 @@ mixin _$LibraryState {
   List<PdfDocument> get recentPdfs => throw _privateConstructorUsedError;
   List<PdfDocument> get favoritePdfs => throw _privateConstructorUsedError;
   bool get isLoading => throw _privateConstructorUsedError;
+  bool get isLoadingMore => throw _privateConstructorUsedError;
   AppFailure? get failure => throw _privateConstructorUsedError;
+  bool get hasMore => throw _privateConstructorUsedError;
 
   /// Create a copy of LibraryState
   /// with the given fields replaced by the non-null parameter values.
@@ -42,7 +44,9 @@ abstract class $LibraryStateCopyWith<$Res> {
     List<PdfDocument> recentPdfs,
     List<PdfDocument> favoritePdfs,
     bool isLoading,
+    bool isLoadingMore,
     AppFailure? failure,
+    bool hasMore,
   });
 }
 
@@ -65,7 +69,9 @@ class _$LibraryStateCopyWithImpl<$Res, $Val extends LibraryState>
     Object? recentPdfs = null,
     Object? favoritePdfs = null,
     Object? isLoading = null,
+    Object? isLoadingMore = null,
     Object? failure = freezed,
+    Object? hasMore = null,
   }) {
     return _then(
       _value.copyWith(
@@ -85,10 +91,18 @@ class _$LibraryStateCopyWithImpl<$Res, $Val extends LibraryState>
                 ? _value.isLoading
                 : isLoading // ignore: cast_nullable_to_non_nullable
                       as bool,
+            isLoadingMore: null == isLoadingMore
+                ? _value.isLoadingMore
+                : isLoadingMore // ignore: cast_nullable_to_non_nullable
+                      as bool,
             failure: freezed == failure
                 ? _value.failure
                 : failure // ignore: cast_nullable_to_non_nullable
                       as AppFailure?,
+            hasMore: null == hasMore
+                ? _value.hasMore
+                : hasMore // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -109,7 +123,9 @@ abstract class _$$LibraryStateImplCopyWith<$Res>
     List<PdfDocument> recentPdfs,
     List<PdfDocument> favoritePdfs,
     bool isLoading,
+    bool isLoadingMore,
     AppFailure? failure,
+    bool hasMore,
   });
 }
 
@@ -131,7 +147,9 @@ class __$$LibraryStateImplCopyWithImpl<$Res>
     Object? recentPdfs = null,
     Object? favoritePdfs = null,
     Object? isLoading = null,
+    Object? isLoadingMore = null,
     Object? failure = freezed,
+    Object? hasMore = null,
   }) {
     return _then(
       _$LibraryStateImpl(
@@ -151,10 +169,18 @@ class __$$LibraryStateImplCopyWithImpl<$Res>
             ? _value.isLoading
             : isLoading // ignore: cast_nullable_to_non_nullable
                   as bool,
+        isLoadingMore: null == isLoadingMore
+            ? _value.isLoadingMore
+            : isLoadingMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
         failure: freezed == failure
             ? _value.failure
             : failure // ignore: cast_nullable_to_non_nullable
                   as AppFailure?,
+        hasMore: null == hasMore
+            ? _value.hasMore
+            : hasMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -168,7 +194,9 @@ class _$LibraryStateImpl implements _LibraryState {
     required final List<PdfDocument> recentPdfs,
     required final List<PdfDocument> favoritePdfs,
     required this.isLoading,
+    required this.isLoadingMore,
     required this.failure,
+    required this.hasMore,
   }) : _allPdfs = allPdfs,
        _recentPdfs = recentPdfs,
        _favoritePdfs = favoritePdfs;
@@ -200,11 +228,15 @@ class _$LibraryStateImpl implements _LibraryState {
   @override
   final bool isLoading;
   @override
+  final bool isLoadingMore;
+  @override
   final AppFailure? failure;
+  @override
+  final bool hasMore;
 
   @override
   String toString() {
-    return 'LibraryState(allPdfs: $allPdfs, recentPdfs: $recentPdfs, favoritePdfs: $favoritePdfs, isLoading: $isLoading, failure: $failure)';
+    return 'LibraryState(allPdfs: $allPdfs, recentPdfs: $recentPdfs, favoritePdfs: $favoritePdfs, isLoading: $isLoading, isLoadingMore: $isLoadingMore, failure: $failure, hasMore: $hasMore)';
   }
 
   @override
@@ -223,7 +255,10 @@ class _$LibraryStateImpl implements _LibraryState {
             ) &&
             (identical(other.isLoading, isLoading) ||
                 other.isLoading == isLoading) &&
-            (identical(other.failure, failure) || other.failure == failure));
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore) &&
+            (identical(other.failure, failure) || other.failure == failure) &&
+            (identical(other.hasMore, hasMore) || other.hasMore == hasMore));
   }
 
   @override
@@ -233,7 +268,9 @@ class _$LibraryStateImpl implements _LibraryState {
     const DeepCollectionEquality().hash(_recentPdfs),
     const DeepCollectionEquality().hash(_favoritePdfs),
     isLoading,
+    isLoadingMore,
     failure,
+    hasMore,
   );
 
   /// Create a copy of LibraryState
@@ -251,7 +288,9 @@ abstract class _LibraryState implements LibraryState {
     required final List<PdfDocument> recentPdfs,
     required final List<PdfDocument> favoritePdfs,
     required final bool isLoading,
+    required final bool isLoadingMore,
     required final AppFailure? failure,
+    required final bool hasMore,
   }) = _$LibraryStateImpl;
 
   @override
@@ -263,7 +302,11 @@ abstract class _LibraryState implements LibraryState {
   @override
   bool get isLoading;
   @override
+  bool get isLoadingMore;
+  @override
   AppFailure? get failure;
+  @override
+  bool get hasMore;
 
   /// Create a copy of LibraryState
   /// with the given fields replaced by the non-null parameter values.

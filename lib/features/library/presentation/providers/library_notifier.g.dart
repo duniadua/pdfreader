@@ -6,7 +6,7 @@ part of 'library_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$libraryNotifierHash() => r'57f3203715dea60b054f9e027660e42ae0c7df45';
+String _$libraryNotifierHash() => r'ab6d96a5637ac6839f0dd39ab1beb6581d05dbb6';
 
 /// Library state notifier
 ///

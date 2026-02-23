@@ -1,13 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/cache/cache_manager.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/logger.dart';
 import 'features/settings/presentation/providers/settings_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize cache manager
+  final cacheManager = CacheManager.instance;
+  AppLogger.i('Cache manager initialized');
 
   // Run app with error handling
   runApp(
@@ -18,6 +25,10 @@ void main() async {
       child: const PdfReaderApp(),
     ),
   );
+
+  // Flush cache on app exit
+  AppLogger.i('App exiting, flushing cache...');
+  await cacheManager.dispose();
 }
 
 class PdfReaderApp extends ConsumerWidget {

@@ -72,6 +72,137 @@ flutter build apk --debug --target-platform android-arm64
 
 **Tip:** Gradle parallel build enabled in `android/gradle.properties` for faster builds.
 
+## Testing Workflow
+
+**IMPORTANT: Always run tests before building APK after code changes.**
+
+### Recommended Workflow
+
+```
+1. Make code changes
+2. Run unit tests
+3. Fix any failing tests
+4. Run code analysis
+5. Fix any warnings/errors
+6. Build APK
+```
+
+### Test Commands
+
+```bash
+# Run all tests
+flutter test
+
+# Run tests with coverage
+flutter test --coverage
+
+# Run specific test file
+flutter test test/unit/features/reader/pdf_reader_models_test.dart
+
+# Run tests for specific feature
+flutter test test/unit/features/reader/
+
+# Run tests with verbose output
+flutter test --verbose
+
+# Run integration tests (requires device/emulator)
+flutter test integration_test/
+```
+
+### Test Structure
+
+```
+test/
+├── unit/                      # Unit tests
+│   ├── core/
+│   │   └── data/models/       # Model tests (PdfDocument, etc.)
+│   └── features/
+│       ├── library/           # Library feature tests
+│       ├── reader/            # Reader feature tests
+│       └── settings/          # Settings feature tests
+├── widget/                    # Widget tests
+└── integration/               # Integration tests (requires device)
+```
+
+### Running Tests Before Building
+
+```bash
+# Complete pre-build test sequence
+flutter test                    # Run all unit tests
+flutter analyze                 # Check for code issues
+dart format .                   # Format code
+flutter build apk --release    # Build APK (only if tests pass!)
+```
+
+### Creating New Tests
+
+When adding new features, create corresponding test files:
+
+```bash
+# Create test for a new feature
+# 1. Create test file: test/unit/features/{feature}/{feature}_test.dart
+# 2. Run the test
+flutter test test/unit/features/{feature}/{feature}_test.dart
+```
+
+### Test Example
+
+```dart
+// test/unit/features/reader/pdf_reader_models_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pdf_reader_app/core/data/models/pdf_document.dart';
+
+void main() {
+  group('PdfDocument', () {
+    test('should have correct properties', () {
+      final pdf = PdfDocument(
+        id: 'test-1',
+        title: 'Test.pdf',
+        filePath: '/path/Test.pdf',
+      );
+
+      expect(pdf.id, 'test-1');
+      expect(pdf.title, 'Test.pdf');
+    });
+  });
+}
+```
+
+### Common Test Options
+
+| Command | Purpose |
+|---------|---------|
+| `flutter test` | Run all unit & widget tests |
+| `flutter test --coverage` | Generate coverage report |
+| `flutter test --update-goldens` | Update golden test files |
+| `flutter test --reporter expanded` | Detailed test output |
+
+### Interpreting Test Results
+
+```
+✅ All tests passed: OK to build APK
+❌ Some tests failed: Fix failures before building
+⚠️  Warnings: Review and fix if critical
+```
+
+### Pre-Build Checklist
+
+Before building APK, verify:
+
+- [ ] All unit tests pass (`flutter test`)
+- [ ] Code analysis shows no issues (`flutter analyze`)
+- [ ] Code is formatted (`dart format .`)
+- [ ] New features have tests
+- [ ] Changed features have updated tests
+- [ ] Manual testing completed on device/emulator
+
+### Quick Test Command
+
+```bash
+# One-liner to run tests before building
+flutter test && flutter analyze && dart format . && echo "✅ Ready to build!"
+```
+
 ## Tech Stack
 
 | Category | Package |

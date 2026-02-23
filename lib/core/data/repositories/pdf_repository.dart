@@ -13,6 +13,12 @@ abstract class PdfRepository {
   /// Get all PDF documents
   Future<Result<List<PdfDocument>>> getAllPdfs();
 
+  /// Get paginated PDF documents with offset
+  Future<Result<PaginatedPdfs>> getPagedPdfs({
+    int offset = 0,
+    int limit = 20,
+  });
+
   /// Get a PDF by ID
   Future<Result<PdfDocument?>> getPdfById(String id);
 
@@ -42,6 +48,35 @@ abstract class PdfRepository {
 
   /// Update thumbnail path for a PDF
   Future<Result<PdfDocument>> updateThumbnail(String pdfId, String? thumbnailPath);
+}
+
+/// Paginated PDFs result
+class PaginatedPdfs {
+  const PaginatedPdfs({
+    required this.pdfs,
+    required this.offset,
+    required this.limit,
+    required this.hasMore,
+    this.totalCount,
+  });
+
+  /// The PDF documents for this page
+  final List<PdfDocument> pdfs;
+
+  /// Current offset
+  final int offset;
+
+  /// Page size
+  final int limit;
+
+  /// Whether there are more PDFs to load
+  final bool hasMore;
+
+  /// Total count (optional, may be expensive to compute)
+  final int? totalCount;
+
+  /// Calculate next offset for loading more
+  int get nextOffset => offset + pdfs.length;
 }
 
 /// Implementation of PdfRepository using SharedPreferences
@@ -91,6 +126,33 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(pdfs);
     } catch (e, st) {
       AppLogger.e('Failed to get all PDFs', e, st);
+      return Result.failure(const StorageException('Failed to load PDFs'), st);
+    }
+  }
+
+  @override
+  Future<Result<PaginatedPdfs>> getPagedPdfs({
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final pdfs = _getPdfs();
+      // Sort by last opened
+      pdfs.sort((a, b) => b.lastOpenedAt.compareTo(a.lastOpenedAt));
+
+      final hasMore = offset + limit < pdfs.length;
+      final end = (offset + limit).clamp(0, pdfs.length);
+      final pagePdfs = pdfs.skip(offset).take(end - offset).toList();
+
+      return Result.success(PaginatedPdfs(
+        pdfs: pagePdfs,
+        offset: offset,
+        limit: limit,
+        hasMore: hasMore,
+        totalCount: pdfs.length,
+      ));
+    } catch (e, st) {
+      AppLogger.e('Failed to get paginated PDFs', e, st);
       return Result.failure(const StorageException('Failed to load PDFs'), st);
     }
   }

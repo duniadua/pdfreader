@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/cache/cache_manager.dart';
+import 'core/data/providers/repository_providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
@@ -12,13 +13,21 @@ import 'features/settings/presentation/providers/settings_notifier.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize SharedPreferences early - this ensures it's ready before the app starts
+  final prefs = await SharedPreferences.getInstance();
+  AppLogger.i('SharedPreferences initialized');
+
   // Initialize cache manager
   final cacheManager = CacheManager.instance;
   AppLogger.i('Cache manager initialized');
 
-  // Run app with error handling
+  // Run app with error handling and pre-initialized SharedPreferences
   runApp(
     ProviderScope(
+      overrides: [
+        // Override the SharedPreferences provider with the pre-initialized value
+        sharedPreferencesProvider.overrideWith((ref) => prefs),
+      ],
       observers: [
         _ProviderLogger(),
       ],

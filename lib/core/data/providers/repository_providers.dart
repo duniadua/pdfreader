@@ -35,8 +35,8 @@ PdfRepository sharedPreferencesPdfRepository(Ref ref) {
       prefs: prefs,
       thumbnailService: thumbnailService,
     ),
-    loading: () => throw Exception('SharedPreferences not ready'),
-    error: (error, stackTrace) => throw Exception('Failed to load SharedPreferences'),
+    loading: () => throw UnimplementedError('SharedPreferences not ready'),
+    error: (error, stackTrace) => throw UnimplementedError('Failed to load SharedPreferences'),
   );
 }
 

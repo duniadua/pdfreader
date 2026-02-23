@@ -46,10 +46,11 @@ class LibraryNotifier extends _$LibraryNotifier {
   late final PdfRepository _repository;
   late final CacheManager _cache;
   int _currentOffset = 0;
+  bool _isLoadingFromBuild = false;
 
   @override
   LibraryState build() {
-    // Get repository from provider
+    // Get repository from provider - SharedPreferences is now pre-initialized in main()
     _repository = ref.read(sharedPreferencesPdfRepositoryProvider);
     _cache = CacheManager.instance;
 
@@ -58,8 +59,12 @@ class LibraryNotifier extends _$LibraryNotifier {
       return _repository.updateProgress(documentId, page, scrollOffset);
     });
 
-    // Load initial data
-    loadLibrary();
+    // Load initial data asynchronously after build completes
+    // Mark that we're loading from build so loadLibrary won't try to update state prematurely
+    _isLoadingFromBuild = true;
+    loadLibrary().then((_) {
+      _isLoadingFromBuild = false;
+    });
 
     ref.onDispose(() {
       // Cleanup if needed
@@ -70,7 +75,10 @@ class LibraryNotifier extends _$LibraryNotifier {
 
   /// Load initial library data with pagination
   Future<void> loadLibrary() async {
-    state = state.copyWith(isLoading: true, failure: null);
+    // If called from build(), don't update state yet (will be done after build completes)
+    if (!_isLoadingFromBuild) {
+      state = state.copyWith(isLoading: true, failure: null);
+    }
     _currentOffset = 0;
 
     // Fetch all data in parallel
@@ -81,7 +89,7 @@ class LibraryNotifier extends _$LibraryNotifier {
     final recentResult = await _repository.getRecentPdfs(limit: CacheConfig.recentCount);
     final favoriteResult = await _repository.getFavoritePdfs();
 
-    state = paginatedResult.when(
+    final newState = paginatedResult.when(
       success: (paginated) {
         // Cache loaded PDFs
         _cache.cachePdfDocuments(paginated.pdfs);
@@ -90,7 +98,7 @@ class LibraryNotifier extends _$LibraryNotifier {
           success: (recentPdfs) {
             return favoriteResult.when(
               success: (favoritePdfs) {
-                return state.copyWith(
+                final resultState = state.copyWith(
                   allPdfs: paginated.pdfs,
                   recentPdfs: recentPdfs,
                   favoritePdfs: favoritePdfs,
@@ -98,6 +106,8 @@ class LibraryNotifier extends _$LibraryNotifier {
                   failure: null,
                   hasMore: paginated.hasMore,
                 );
+                AppLogger.i('Created new state with isLoading=${resultState.isLoading}, allPdfs=${resultState.allPdfs.length}');
+                return resultState;
               },
               failure: (error, stackTrace) {
                 return state.copyWith(
@@ -148,6 +158,8 @@ class LibraryNotifier extends _$LibraryNotifier {
         );
       },
     );
+    state = newState;
+    AppLogger.i('Assigned new state, isLoading=${state.isLoading}, allPdfs=${state.allPdfs.length}');
   }
 
   /// Load more PDFs (pagination)

@@ -65,7 +65,7 @@ final pdfRepositoryProvider = AutoDisposeProvider<PdfRepository>.internal(
 // ignore: unused_element
 typedef PdfRepositoryRef = AutoDisposeProviderRef<PdfRepository>;
 String _$sharedPreferencesPdfRepositoryHash() =>
-    r'b27d52e243b238973d9a36a39c165bb22aa2886e';
+    r'3d12a02b70ef81ea47cac1a46f415e90c3330b8d';
 
 /// Provider for PdfRepository with SharedPreferences
 ///

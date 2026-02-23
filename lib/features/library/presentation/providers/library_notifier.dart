@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/cache/cache_config.dart';
+import '../../../../core/cache/cache_manager.dart';
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/data/providers/repository_providers.dart';
 import '../../../../core/data/repositories/pdf_repository.dart';
@@ -22,7 +24,9 @@ class LibraryState with _$LibraryState {
     required List<PdfDocument> recentPdfs,
     required List<PdfDocument> favoritePdfs,
     required bool isLoading,
+    required bool isLoadingMore,
     required AppFailure? failure,
+    required bool hasMore,
   }) = _LibraryState;
 
   factory LibraryState.initial() => const LibraryState(
@@ -30,7 +34,9 @@ class LibraryState with _$LibraryState {
         recentPdfs: [],
         favoritePdfs: [],
         isLoading: true,
+        isLoadingMore: false,
         failure: null,
+        hasMore: true,
       );
 }
 
@@ -38,11 +44,19 @@ class LibraryState with _$LibraryState {
 @riverpod
 class LibraryNotifier extends _$LibraryNotifier {
   late final PdfRepository _repository;
+  late final CacheManager _cache;
+  int _currentOffset = 0;
 
   @override
   LibraryState build() {
     // Get repository from provider
     _repository = ref.read(sharedPreferencesPdfRepositoryProvider);
+    _cache = CacheManager.instance;
+
+    // Set up progress save callback
+    _cache.setProgressSaveCallback((documentId, page, scrollOffset) {
+      return _repository.updateProgress(documentId, page, scrollOffset);
+    });
 
     // Load initial data
     loadLibrary();
@@ -54,41 +68,45 @@ class LibraryNotifier extends _$LibraryNotifier {
     return LibraryState.initial();
   }
 
-  /// Load all library data
+  /// Load initial library data with pagination
   Future<void> loadLibrary() async {
     state = state.copyWith(isLoading: true, failure: null);
+    _currentOffset = 0;
 
-    final results = await Future.wait([
-      _repository.getAllPdfs(),
-      _repository.getRecentPdfs(limit: 10),
-      _repository.getFavoritePdfs(),
-    ]);
+    // Fetch all data in parallel
+    final paginatedResult = await _repository.getPagedPdfs(
+      offset: 0,
+      limit: CacheConfig.initialPageSize,
+    );
+    final recentResult = await _repository.getRecentPdfs(limit: CacheConfig.recentCount);
+    final favoriteResult = await _repository.getFavoritePdfs();
 
-    final allResult = results[0];
-    final recentResult = results[1];
-    final favoriteResult = results[2];
+    state = paginatedResult.when(
+      success: (paginated) {
+        // Cache loaded PDFs
+        _cache.cachePdfDocuments(paginated.pdfs);
 
-    state = allResult.when(
-      success: (allPdfs) {
         return recentResult.when(
           success: (recentPdfs) {
             return favoriteResult.when(
               success: (favoritePdfs) {
                 return state.copyWith(
-                  allPdfs: allPdfs,
+                  allPdfs: paginated.pdfs,
                   recentPdfs: recentPdfs,
                   favoritePdfs: favoritePdfs,
                   isLoading: false,
                   failure: null,
+                  hasMore: paginated.hasMore,
                 );
               },
               failure: (error, stackTrace) {
                 return state.copyWith(
-                  allPdfs: allPdfs,
+                  allPdfs: paginated.pdfs,
                   recentPdfs: recentPdfs,
                   favoritePdfs: [],
                   isLoading: false,
                   failure: _handleAppFailure(error, stackTrace),
+                  hasMore: paginated.hasMore,
                 );
               },
             );
@@ -97,20 +115,22 @@ class LibraryNotifier extends _$LibraryNotifier {
             return favoriteResult.when(
               success: (favoritePdfs) {
                 return state.copyWith(
-                  allPdfs: allPdfs,
+                  allPdfs: paginated.pdfs,
                   recentPdfs: [],
                   favoritePdfs: favoritePdfs,
                   isLoading: false,
                   failure: _handleAppFailure(error, stackTrace),
+                  hasMore: paginated.hasMore,
                 );
               },
               failure: (error2, stackTrace2) {
                 return state.copyWith(
-                  allPdfs: allPdfs,
+                  allPdfs: paginated.pdfs,
                   recentPdfs: [],
                   favoritePdfs: [],
                   isLoading: false,
                   failure: _handleAppFailure(error, stackTrace),
+                  hasMore: paginated.hasMore,
                 );
               },
             );
@@ -123,6 +143,39 @@ class LibraryNotifier extends _$LibraryNotifier {
           recentPdfs: [],
           favoritePdfs: [],
           isLoading: false,
+          failure: _handleAppFailure(error, stackTrace),
+          hasMore: false,
+        );
+      },
+    );
+  }
+
+  /// Load more PDFs (pagination)
+  Future<void> loadMore() async {
+    if (state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(isLoadingMore: true);
+
+    final result = await _repository.getPagedPdfs(
+      offset: _currentOffset + CacheConfig.initialPageSize,
+      limit: CacheConfig.pageSize,
+    );
+
+    result.when(
+      success: (paginated) {
+        _currentOffset = paginated.nextOffset;
+        _cache.cachePdfDocuments(paginated.pdfs);
+
+        state = state.copyWith(
+          allPdfs: [...state.allPdfs, ...paginated.pdfs],
+          hasMore: paginated.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      failure: (error, stackTrace) {
+        AppLogger.e('Failed to load more PDFs', error, stackTrace);
+        state = state.copyWith(
+          isLoadingMore: false,
           failure: _handleAppFailure(error, stackTrace),
         );
       },
@@ -143,6 +196,9 @@ class LibraryNotifier extends _$LibraryNotifier {
 
   /// Delete a PDF
   Future<void> deletePdf(String pdfId) async {
+    // Invalidate cache first
+    _cache.invalidatePdf(pdfId);
+
     final result = await _repository.deletePdf(pdfId);
     result.when(
       failure: (error, stackTrace) {
@@ -160,17 +216,42 @@ class LibraryNotifier extends _$LibraryNotifier {
 
   /// Mark a PDF as opened (updates lastOpenedAt for timeline)
   Future<void> markAsOpened(String pdfId) async {
-    final result = await _repository.getPdfById(pdfId);
+    // Check cache first
+    var pdf = _cache.getPdfDocument(pdfId);
+
+    if (pdf == null) {
+      final result = await _repository.getPdfById(pdfId);
+      await result.when(
+        success: (fetchedPdf) async {
+          if (fetchedPdf == null) return;
+          await _updateOpenedTimestamp(fetchedPdf);
+        },
+        failure: (error, stackTrace) {
+          AppLogger.e('Failed to mark PDF as opened', error, stackTrace);
+        },
+      );
+    } else {
+      await _updateOpenedTimestamp(pdf);
+    }
+  }
+
+  Future<void> _updateOpenedTimestamp(PdfDocument pdf) async {
+    final updated = pdf.copyWith(lastOpenedAt: DateTime.now());
+    await _repository.updatePdf(updated);
+    // Update cache
+    _cache.cachePdfDocument(updated);
+    // Refresh recent PDFs only (not full library reload)
+    _refreshRecentPdfs();
+  }
+
+  Future<void> _refreshRecentPdfs() async {
+    final result = await _repository.getRecentPdfs(limit: CacheConfig.recentCount);
     result.when(
-      success: (pdf) async {
-        if (pdf == null) return;
-        final updated = pdf.copyWith(lastOpenedAt: DateTime.now());
-        await _repository.updatePdf(updated);
-        // Refresh library data to update timeline
-        await loadLibrary();
+      success: (recentPdfs) {
+        state = state.copyWith(recentPdfs: recentPdfs);
       },
       failure: (error, stackTrace) {
-        AppLogger.e('Failed to mark PDF as opened', error, stackTrace);
+        AppLogger.e('Failed to refresh recent PDFs', error, stackTrace);
       },
     );
   }

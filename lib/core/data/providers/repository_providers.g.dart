@@ -26,7 +26,7 @@ final sharedPreferencesProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SharedPreferencesRef = AutoDisposeFutureProviderRef<SharedPreferences>;
-String _$thumbnailServiceHash() => r'31afdecd4cf779dee5120b7f594f21d22b980b26';
+String _$thumbnailServiceHash() => r'626cc24a364f4fd63757e3b00948ef0795e4be6f';
 
 /// Provider for ThumbnailService
 ///

@@ -52,6 +52,28 @@ class MockPdfRepository extends _i1.Mock implements _i3.PdfRepository {
           as _i4.Future<_i2.Result<List<_i5.PdfDocument>>>);
 
   @override
+  _i4.Future<_i2.Result<_i3.PaginatedPdfs>> getPagedPdfs({
+    int? offset = 0,
+    int? limit = 20,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPagedPdfs, [], {
+              #offset: offset,
+              #limit: limit,
+            }),
+            returnValue: _i4.Future<_i2.Result<_i3.PaginatedPdfs>>.value(
+              _FakeResult_0<_i3.PaginatedPdfs>(
+                this,
+                Invocation.method(#getPagedPdfs, [], {
+                  #offset: offset,
+                  #limit: limit,
+                }),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Result<_i3.PaginatedPdfs>>);
+
+  @override
   _i4.Future<_i2.Result<_i5.PdfDocument?>> getPdfById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getPdfById, [id]),

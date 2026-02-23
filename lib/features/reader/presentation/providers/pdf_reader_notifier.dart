@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/data/providers/repository_providers.dart';
+import '../../../../core/data/repositories/pdf_repository.dart';
 
 part 'pdf_reader_notifier.g.dart';
 part 'pdf_reader_notifier.freezed.dart';
@@ -12,16 +13,19 @@ part 'pdf_reader_notifier.freezed.dart';
 /// Provider for PDF reader state
 @riverpod
 class PdfReaderNotifier extends _$PdfReaderNotifier {
+  late final PdfRepository _repository;
+
   @override
   PdfReaderState build(String pdfId) {
+    // Get repository from provider - SharedPreferences is now pre-initialized in main()
+    _repository = ref.read(sharedPreferencesPdfRepositoryProvider);
     _loadPdf();
     return const PdfReaderState.loading();
   }
 
   /// Load PDF document from repository
   Future<void> _loadPdf() async {
-    final repo = ref.read(sharedPreferencesPdfRepositoryProvider);
-    final result = await repo.getPdfById(pdfId);
+    final result = await _repository.getPdfById(pdfId);
 
     result.when(
       success: (pdf) {
@@ -45,7 +49,7 @@ class PdfReaderNotifier extends _$PdfReaderNotifier {
   void onPageChanged(int page) {
     state.maybeWhen(
       loaded: (pdf) {
-        ref.read(sharedPreferencesPdfRepositoryProvider).updateProgress(pdfId, page, 0);
+        _repository.updateProgress(pdfId, page, 0);
       },
       orElse: () {},
     );
@@ -55,8 +59,7 @@ class PdfReaderNotifier extends _$PdfReaderNotifier {
   Future<void> toggleFavorite() async {
     state.maybeWhen(
       loaded: (pdf) async {
-        final repo = ref.read(sharedPreferencesPdfRepositoryProvider);
-        final result = await repo.toggleFavorite(pdf.id);
+        final result = await _repository.toggleFavorite(pdf.id);
         result.when(
           success: (updated) => state = PdfReaderState.loaded(updated),
           failure: (error, _) => state = PdfReaderState.error(error.toString()),

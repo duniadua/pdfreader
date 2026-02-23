@@ -1,6 +1,9 @@
 import 'dart:io';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
+
+import '../utils/logger.dart';
 
 /// Service for generating PDF thumbnails
 class ThumbnailService {
@@ -30,9 +33,11 @@ class ThumbnailService {
       // Check if thumbnail already exists
       final thumbnailFile = File(thumbnailPath);
       if (await thumbnailFile.exists()) {
+        AppLogger.i('Thumbnail cache hit: $thumbnailPath');
         return thumbnailPath;
       }
 
+      AppLogger.i('Generating thumbnail for: $pdfPath');
       // Generate new thumbnail
       final pdf = await PdfDocument.openFile(pdfPath);
       final page = await pdf.getPage(1); // First page (1-indexed)
@@ -44,6 +49,7 @@ class ThumbnailService {
       );
 
       if (image == null) {
+        AppLogger.w('Failed to render PDF page for thumbnail: $pdfPath');
         await pdf.close();
         return null;
       }
@@ -51,9 +57,10 @@ class ThumbnailService {
       await thumbnailFile.writeAsBytes(image.bytes);
       await pdf.close();
 
+      AppLogger.i('Thumbnail generated successfully: $thumbnailPath');
       return thumbnailPath;
-    } catch (e) {
-      // Return null if thumbnail generation fails
+    } catch (e, st) {
+      AppLogger.e('Failed to generate thumbnail for $pdfPath', e, st);
       return null;
     }
   }

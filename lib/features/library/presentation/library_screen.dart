@@ -73,9 +73,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           _buildHeader(context, currentTab),
 
           // Body Content
-          Expanded(
-            child: _buildBody(currentTab, libraryState, filteredPdfs),
-          ),
+          Expanded(child: _buildBody(currentTab, libraryState, filteredPdfs)),
         ],
       ),
       floatingActionButton: currentIndex == 0
@@ -93,7 +91,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildHeader(BuildContext context, LibraryTab tab) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
+    final backgroundColor = isDark
+        ? AppTheme.backgroundDark
+        : AppTheme.backgroundLight;
 
     return Container(
       decoration: BoxDecoration(
@@ -158,14 +158,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: isDark
-                    ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-                    : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+                      ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                      : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (value) {
-                    ref.read(searchQueryNotifierProvider.notifier).setQuery(value);
+                    ref
+                        .read(searchQueryNotifierProvider.notifier)
+                        .setQuery(value);
                   },
                   style: GoogleFonts.inter(
                     fontSize: 14,
@@ -175,7 +177,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     hintText: 'Search your PDFs, folders, tags...',
                     hintStyle: GoogleFonts.inter(
                       fontSize: 14,
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
                     ),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: IconButton(
@@ -185,7 +189,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       },
                     ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -198,7 +205,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildBottomNavigationBar(int currentIndex) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
+    final backgroundColor = isDark
+        ? AppTheme.backgroundDark
+        : AppTheme.backgroundLight;
 
     return Container(
       decoration: BoxDecoration(
@@ -221,27 +230,35 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 icon: Icons.folder,
                 label: 'Library',
                 isSelected: currentIndex == 0,
-                onTap: () => ref.read(libraryTabNotifierProvider.notifier).setTab(LibraryTab.library),
+                onTap: () => ref
+                    .read(libraryTabNotifierProvider.notifier)
+                    .setTab(LibraryTab.library),
               ),
               _buildNavItem(
                 icon: Icons.star_border,
                 selectedIcon: Icons.star,
                 label: 'Favorites',
                 isSelected: currentIndex == 1,
-                onTap: () => ref.read(libraryTabNotifierProvider.notifier).setTab(LibraryTab.favorites),
+                onTap: () => ref
+                    .read(libraryTabNotifierProvider.notifier)
+                    .setTab(LibraryTab.favorites),
               ),
               _buildNavItem(
                 icon: Icons.history,
                 label: 'Timeline',
                 isSelected: currentIndex == 2,
-                onTap: () => ref.read(libraryTabNotifierProvider.notifier).setTab(LibraryTab.timeline),
+                onTap: () => ref
+                    .read(libraryTabNotifierProvider.notifier)
+                    .setTab(LibraryTab.timeline),
               ),
               _buildNavItem(
                 icon: Icons.cloud_outlined,
                 selectedIcon: Icons.cloud,
                 label: 'Cloud',
                 isSelected: currentIndex == 3,
-                onTap: () => ref.read(libraryTabNotifierProvider.notifier).setTab(LibraryTab.cloud),
+                onTap: () => ref
+                    .read(libraryTabNotifierProvider.notifier)
+                    .setTab(LibraryTab.cloud),
               ),
             ],
           ),
@@ -307,7 +324,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }).toList();
   }
 
-  Widget _buildBody(LibraryTab tab, LibraryState state, List<PdfDocument> pdfs) {
+  Widget _buildBody(
+    LibraryTab tab,
+    LibraryState state,
+    List<PdfDocument> pdfs,
+  ) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -361,9 +382,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
 
         // Document List/Grid
-        _isGridView
-            ? _buildDocumentGrid(pdfs)
-            : _buildDocumentList(pdfs),
+        _isGridView ? _buildDocumentGrid(pdfs) : _buildDocumentList(pdfs),
 
         // Load More indicator
         if (state.hasMore && !state.isLoading)
@@ -374,9 +393,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 child: state.isLoadingMore
                     ? const CircularProgressIndicator()
                     : ElevatedButton(
-                        onPressed: () => ref.read(libraryNotifierProvider.notifier).loadMore(),
+                        onPressed: () => ref
+                            .read(libraryNotifierProvider.notifier)
+                            .loadMore(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+                          backgroundColor: AppTheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           foregroundColor: AppTheme.primary,
                         ),
                         child: const Text('Load More'),
@@ -386,9 +409,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
 
         // Bottom spacing
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 100),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
@@ -445,7 +466,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildRecentSection(List<PdfDocument> recentPdfs) {
     return SizedBox(
-      height: 220,
+      height: 280,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -460,9 +481,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildRecentCard(PdfDocument pdf) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayTitle = pdf.title.isEmpty ? 'Untitled PDF' : pdf.title;
 
     return Container(
-      width: 160,
+      width: 170,
       margin: const EdgeInsets.only(right: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,10 +493,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           GestureDetector(
             onTap: () => _openPdf(pdf),
             child: Container(
-              width: 160,
-              height: 213,
+              width: 170,
+              height: 220,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -487,7 +511,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: Stack(
                 children: [
                   // PDF thumbnail with fallback to icon
-                  if (pdf.thumbnailPath != null && File(pdf.thumbnailPath!).existsSync())
+                  if (pdf.thumbnailPath != null &&
+                      File(pdf.thumbnailPath!).existsSync())
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.file(
@@ -542,18 +567,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: 8),
           // Title and time
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  pdf.title,
+                  displayTitle,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : const Color(0xFF1E293B),
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
@@ -562,9 +587,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    color: isDark
+                        ? const Color(0xFF64748B)
+                        : const Color(0xFF94A3B8),
                     letterSpacing: 0.5,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -576,18 +605,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildDocumentList(List<PdfDocument> pdfs) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final pdf = pdfs[index];
-          return _DocumentListItem(
-            pdf: pdf,
-            onTap: () => _openPdf(pdf),
-            onFavoriteToggle: () => _toggleFavorite(pdf.id),
-            onDelete: () => _deletePdf(pdf),
-          );
-        },
-        childCount: pdfs.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final pdf = pdfs[index];
+        return _DocumentListItem(
+          pdf: pdf,
+          onTap: () => _openPdf(pdf),
+          onFavoriteToggle: () => _toggleFavorite(pdf.id),
+          onDelete: () => _deletePdf(pdf),
+        );
+      }, childCount: pdfs.length),
     );
   }
 
@@ -601,13 +627,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           mainAxisSpacing: 12,
           childAspectRatio: 0.75,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final pdf = pdfs[index];
-            return _buildRecentCard(pdf);
-          },
-          childCount: pdfs.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final pdf = pdfs[index];
+          return _buildRecentCard(pdf);
+        }, childCount: pdfs.length),
       ),
     );
   }
@@ -765,10 +788,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _showAddPdfDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const _AddPdfDialog(),
-    );
+    showDialog(context: context, builder: (context) => const _AddPdfDialog());
   }
 
   int _tabToIndex(LibraryTab tab) {
@@ -825,8 +845,8 @@ class _DocumentListItem extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isDark
-            ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-            : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+              ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+              : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -836,16 +856,21 @@ class _DocumentListItem extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFCBD5E1),
                   width: 1,
                 ),
               ),
               child: Stack(
                 children: [
-                  if (pdf.thumbnailPath != null && File(pdf.thumbnailPath!).existsSync())
+                  if (pdf.thumbnailPath != null &&
+                      File(pdf.thumbnailPath!).existsSync())
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.file(
@@ -917,7 +942,9 @@ class _DocumentListItem extends StatelessWidget {
                     '${pdf.formattedFileSize} • ${_formatDate(pdf.lastOpenedAt)}',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
                     ),
                   ),
                 ],
@@ -928,7 +955,9 @@ class _DocumentListItem extends StatelessWidget {
             PopupMenuButton<String>(
               icon: Icon(
                 Icons.more_vert,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
               ),
               onSelected: (value) {
                 switch (value) {
@@ -951,7 +980,11 @@ class _DocumentListItem extends StatelessWidget {
                         color: pdf.isFavorite ? null : Colors.amber,
                       ),
                       const SizedBox(width: 12),
-                      Text(pdf.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
+                      Text(
+                        pdf.isFavorite
+                            ? 'Remove from Favorites'
+                            : 'Add to Favorites',
+                      ),
                     ],
                   ),
                 ),
@@ -1065,9 +1098,7 @@ class _AddPdfDialog extends ConsumerWidget {
               : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark
-                ? const Color(0xFF334155)
-                : const Color(0xFFCBD5E1),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
             width: 1,
           ),
         ),
@@ -1080,11 +1111,7 @@ class _AddPdfDialog extends ConsumerWidget {
                 color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: AppTheme.primary,
-                size: 24,
-              ),
+              child: Icon(icon, color: AppTheme.primary, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(

@@ -466,7 +466,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildRecentSection(List<PdfDocument> recentPdfs) {
     return SizedBox(
-      height: 280,
+      height: 260,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -484,8 +484,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final displayTitle = pdf.title.isEmpty ? 'Untitled PDF' : pdf.title;
 
     return Container(
-      width: 170,
-      margin: const EdgeInsets.only(right: 16),
+      width: 160,
+      margin: const EdgeInsets.only(right: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -493,8 +493,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           GestureDetector(
             onTap: () => _openPdf(pdf),
             child: Container(
-              width: 170,
-              height: 220,
+              width: 160,
+              height: 200,
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF1E293B)
@@ -512,21 +512,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   // PDF thumbnail with fallback to icon
                   if (pdf.thumbnailPath != null &&
+                      pdf.thumbnailPath!.isNotEmpty &&
                       File(pdf.thumbnailPath!).existsSync())
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.file(
                         File(pdf.thumbnailPath!),
                         width: 160,
-                        height: 213,
+                        height: 200,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback if image fails to load
+                          return Center(
+                            child: Icon(
+                              Icons.picture_as_pdf,
+                              size: 40,
+                              color: AppTheme.primary.withValues(alpha: 0.5),
+                            ),
+                          );
+                        },
                       ),
                     )
                   else
                     Center(
                       child: Icon(
                         Icons.picture_as_pdf,
-                        size: 48,
+                        size: 40,
                         color: AppTheme.primary.withValues(alpha: 0.5),
                       ),
                     ),
@@ -564,33 +575,34 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           // Title and time
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
                   displayTitle,
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    height: 1.2,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   _formatRelativeTime(pdf.lastOpenedAt),
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
                     color: isDark
                         ? const Color(0xFF64748B)
                         : const Color(0xFF94A3B8),
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -870,6 +882,7 @@ class _DocumentListItem extends StatelessWidget {
               child: Stack(
                 children: [
                   if (pdf.thumbnailPath != null &&
+                      pdf.thumbnailPath!.isNotEmpty &&
                       File(pdf.thumbnailPath!).existsSync())
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -878,6 +891,15 @@ class _DocumentListItem extends StatelessWidget {
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.picture_as_pdf,
+                              size: 28,
+                              color: AppTheme.primary.withValues(alpha: 0.7),
+                            ),
+                          );
+                        },
                       ),
                     )
                   else

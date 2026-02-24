@@ -5,7 +5,6 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf_reader_app/core/data/repositories/pdf_repository.dart';
 import 'package:pdf_reader_app/core/data/models/pdf_document.dart';
-import 'package:pdf_reader_app/core/utils/result.dart';
 
 @GenerateMocks([SharedPreferences])
 import 'pdf_repository_test.mocks.dart';
@@ -43,20 +42,6 @@ void main() {
         'isFavorite': false,
         'progress': null,
       }
-    ]);
-
-    final testPdfArrayJson = json.encode([
-      testPdf.toJson(),
-      PdfDocument(
-        id: 'test-id-2',
-        title: 'Recent PDF',
-        filePath: '/path/to/recent.pdf',
-        fileSize: 2048 * 1024,
-        createdAt: DateTime(2024, 1, 11),
-        lastOpenedAt: DateTime(2024, 1, 16),
-        totalPages: 50,
-        isFavorite: true,
-      ).toJson(),
     ]);
 
     group('getAllPdfs', () {

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'core/cache/cache_manager.dart';
 import 'core/data/providers/repository_providers.dart';
@@ -12,6 +14,32 @@ import 'features/settings/presentation/providers/settings_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+    AppLogger.i('Firebase initialized');
+
+    // Initialize Crashlytics
+    final crashlytics = FirebaseCrashlytics.instance;
+
+    // Set Crashlytics enabled in release mode only
+    if (kReleaseMode) {
+      await crashlytics.setCrashlyticsCollectionEnabled(true);
+    } else {
+      // Disable in debug mode to avoid noise
+      await crashlytics.setCrashlyticsCollectionEnabled(false);
+      AppLogger.i('Crashlytics disabled in debug mode');
+    }
+
+    // Set user identifier (can be enhanced later with actual user ID)
+    await crashlytics.setUserIdentifier('user_${DateTime.now().millisecondsSinceEpoch}');
+
+    AppLogger.i('Crashlytics initialized');
+  } catch (e, st) {
+    AppLogger.e('Failed to initialize Firebase', e, st);
+    // Continue without Firebase - could be optional features
+  }
 
   // Initialize SharedPreferences early - this ensures it's ready before the app starts
   final prefs = await SharedPreferences.getInstance();

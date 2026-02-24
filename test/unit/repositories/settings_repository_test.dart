@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf_reader_app/core/data/repositories/settings_repository.dart';
 import 'package:pdf_reader_app/core/data/models/app_settings.dart';
 import 'package:pdf_reader_app/core/constants/app_constants.dart';
-import 'package:pdf_reader_app/core/utils/result.dart';
 
 @GenerateMocks([SharedPreferences])
 import 'settings_repository_test.mocks.dart';

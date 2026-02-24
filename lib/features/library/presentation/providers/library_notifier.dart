@@ -305,7 +305,7 @@ class LibraryNotifier extends _$LibraryNotifier {
 
       // Get file info
       final filePath = file.path!;
-      final fileName = file.name ?? 'Unknown PDF';
+      final fileName = file.name;
       final fileSize = File(filePath).lengthSync();
 
       // Validate file is a PDF

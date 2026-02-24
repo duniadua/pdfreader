@@ -4,6 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:pdf_reader_app/core/data/models/app_settings.dart';
+import 'package:pdf_reader_app/core/data/providers/repository_providers.dart';
 import 'package:pdf_reader_app/core/data/repositories/settings_repository.dart';
 import 'package:pdf_reader_app/core/constants/app_constants.dart';
 import 'package:pdf_reader_app/core/utils/result.dart' as result;

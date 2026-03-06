@@ -118,15 +118,17 @@ class FirebaseAuthRepository {
   Future<Map<String, dynamic>?> getGoogleCredentials() async {
     try {
       if (!await _googleSignIn.isSignedIn()) {
+        print('[GoogleDrive] User not signed in with Google');
         return null;
       }
 
       final GoogleSignInAccount? googleUser = _googleSignIn.currentUser;
       if (googleUser == null) {
+        print('[GoogleDrive] No Google user found');
         return null;
       }
 
-      // Get fresh authentication
+      // Get fresh authentication - this will get a new access token with current scopes
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
@@ -135,7 +137,11 @@ class FirebaseAuthRepository {
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
 
+      print('[GoogleDrive] Access token obtained: ${accessToken != null ? "YES" : "NO"}');
+      print('[GoogleDrive] Scopes requested: drive.readonly');
+
       if (accessToken == null) {
+        print('[GoogleDrive] Access token is null');
         return null;
       }
 
@@ -148,6 +154,7 @@ class FirebaseAuthRepository {
         'expiry': expiry,
       };
     } on Exception catch (e) {
+      print('[GoogleDrive] Error getting credentials: ${e.toString()}');
       throw Exception('Failed to get Google credentials: ${e.toString()}');
     }
   }

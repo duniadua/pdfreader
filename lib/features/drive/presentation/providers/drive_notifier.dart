@@ -46,6 +46,7 @@ class DriveNotifier extends _$DriveNotifier {
     required String refreshToken,
     required DateTime expiry,
   }) async {
+    print('[DriveNotifier] Attempting to connect to Google Drive...');
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     final repository = ref.read(driveRepositoryProvider);
@@ -60,6 +61,7 @@ class DriveNotifier extends _$DriveNotifier {
     return result.when(
       success: (_) async {
         final userEmail = repository.getCurrentUserEmail();
+        print('[DriveNotifier] Connected to Drive successfully. User: $userEmail');
         state = state.copyWith(
           isConnected: true,
           userName: userEmail,
@@ -75,6 +77,7 @@ class DriveNotifier extends _$DriveNotifier {
       },
       failure: (failure) {
         final message = _getFailureMessage(failure);
+        print('[DriveNotifier] Failed to connect: $message');
         state = state.copyWith(errorMessage: message);
         return false;
       },
@@ -97,7 +100,9 @@ class DriveNotifier extends _$DriveNotifier {
 
   /// Load PDF files from Google Drive
   Future<void> loadDriveFiles() async {
+    print('[DriveNotifier] Loading PDF files from Drive...');
     if (!state.isConnected) {
+      print('[DriveNotifier] Not connected to Drive');
       state = state.copyWith(
         errorMessage: 'Not connected to Google Drive',
       );
@@ -111,6 +116,7 @@ class DriveNotifier extends _$DriveNotifier {
 
     result.when(
       success: (files) {
+        print('[DriveNotifier] Successfully loaded ${files.length} files');
         state = state.copyWith(
           files: files,
           isLoading: false,
@@ -121,6 +127,7 @@ class DriveNotifier extends _$DriveNotifier {
       },
       failure: (failure) {
         final message = _getFailureMessage(failure);
+        print('[DriveNotifier] Failed to load files: $message');
         state = state.copyWith(
           isLoading: false,
           errorMessage: message,

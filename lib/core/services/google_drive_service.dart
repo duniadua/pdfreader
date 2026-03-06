@@ -30,6 +30,7 @@ class GoogleDriveService {
   DateTime? _tokenExpiry;
   drive.DriveApi? _driveApi;
   String? _currentUserEmail;
+  http.Client? _httpClient;
 
   /// Check if user is signed in (has valid access token)
   bool get isSignedIn => _accessToken != null && _driveApi != null;
@@ -70,6 +71,9 @@ class GoogleDriveService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_accessTokenKey, token);
 
+    // Close existing client if any
+    _httpClient?.close();
+
     // Create Drive API with authenticated client
     _createDriveApiClient();
   }
@@ -79,12 +83,12 @@ class GoogleDriveService {
     if (_accessToken == null) return;
 
     // Create a simple HTTP client that adds the Bearer token
-    final client = _AuthenticatedClient(
+    _httpClient = _AuthenticatedClient(
       accessToken: _accessToken!,
       baseClient: http.Client(),
     );
 
-    _driveApi = drive.DriveApi(client);
+    _driveApi = drive.DriveApi(_httpClient!);
   }
 
   /// Refresh the access token by getting a fresh one from existing sign-in
@@ -108,28 +112,39 @@ class GoogleDriveService {
   /// Fetch user information to get email
   Future<void> _fetchUserInfo() async {
     try {
-      if (_driveApi == null) return;
+      if (_driveApi == null) {
+        print('[GoogleDriveService] _fetchUserInfo: _driveApi is null');
+        return;
+      }
 
+      AppLogger.i('Fetching Drive user info...');
+      print('[GoogleDriveService] Fetching user info from Drive API...');
       final about = await _driveApi!.about.get(
         $fields: 'user(emailAddress,displayName)',
       );
 
       _currentUserEmail = about.user?.emailAddress;
+      print('[GoogleDriveService] Got user email: $_currentUserEmail');
       AppLogger.i('Google Drive user: $_currentUserEmail');
-    } catch (e) {
-      AppLogger.w('Could not fetch user info: $e');
+    } catch (e, st) {
+      print('[GoogleDriveService] Failed to fetch user info: $e');
+      AppLogger.e('Could not fetch user info', e, st);
+      // Don't fail completely - user info is not critical
     }
   }
 
   /// List all PDF files from Google Drive
   Future<List<DriveFile>> listPdfs() async {
+    print('[GoogleDriveService] listPdfs called - _driveApi: ${_driveApi != null}, isTokenExpired: $isTokenExpired');
     if (_driveApi == null || isTokenExpired) {
       AppLogger.w('Drive API not initialized or token expired');
+      print('[GoogleDriveService] Cannot fetch - API null or token expired');
       return [];
     }
 
     try {
       AppLogger.i('Fetching PDF files from Google Drive...');
+      print('[GoogleDriveService] Calling Drive API...');
 
       final response = await _driveApi!.files.list(
         q: "mimeType='application/pdf'",
@@ -139,6 +154,7 @@ class GoogleDriveService {
 
       final files = response.files ?? [];
       AppLogger.i('Found ${files.length} PDF files in Drive');
+      print('[GoogleDriveService] API returned ${files.length} files');
 
       return files.map((file) => DriveFile(
         id: file.id ?? '',
@@ -149,6 +165,8 @@ class GoogleDriveService {
         webViewLink: file.webViewLink,
       )).toList();
     } catch (e, st) {
+      print('[GoogleDriveService] ERROR: $e');
+      print('[GoogleDriveService] StackTrace: $st');
       AppLogger.e('Failed to list Drive files', e, st);
       return [];
     }
@@ -225,6 +243,8 @@ class GoogleDriveService {
 
   /// Sign out and clear credentials
   Future<void> signOut() async {
+    _httpClient?.close();
+    _httpClient = null;
     _accessToken = null;
     _tokenExpiry = null;
     _driveApi = null;

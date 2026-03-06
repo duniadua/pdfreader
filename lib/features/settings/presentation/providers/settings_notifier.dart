@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/models/app_settings.dart';
 import '../../../../core/data/providers/repository_providers.dart';
 import '../../../../core/data/repositories/settings_repository.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../core/utils/exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -74,6 +75,8 @@ class SettingsNotifier extends _$SettingsNotifier {
 
   /// Update dark mode
   Future<void> setDarkMode(bool value) async {
+    // Track theme change
+    AnalyticsService.instance.trackThemeChange(isDarkMode: value);
     final newSettings = state.settings.copyWith(darkMode: value);
     await _updateSettings(newSettings);
   }
@@ -81,18 +84,30 @@ class SettingsNotifier extends _$SettingsNotifier {
   /// Update font size
   Future<void> setFontSize(double value) async {
     final clampedValue = value.clamp(8.0, 24.0);
+    // Track font size change
+    AnalyticsService.instance.trackFontSizeChange(fontSize: clampedValue);
     final newSettings = state.settings.copyWith(fontSize: clampedValue);
     await _updateSettings(newSettings);
   }
 
   /// Update scroll direction
   Future<void> setScrollDirection(ScrollDirection value) async {
+    // Track setting toggle
+    AnalyticsService.instance.trackSettingToggle(
+      settingName: 'scroll_direction',
+      enabled: value == ScrollDirection.vertical,
+    );
     final newSettings = state.settings.copyWith(scrollDirection: value);
     await _updateSettings(newSettings);
   }
 
   /// Update auto crop margins
   Future<void> setAutoCropMargins(bool value) async {
+    // Track setting toggle
+    AnalyticsService.instance.trackSettingToggle(
+      settingName: 'auto_crop_margins',
+      enabled: value,
+    );
     final newSettings = state.settings.copyWith(autoCropMargins: value);
     await _updateSettings(newSettings);
   }
@@ -100,6 +115,17 @@ class SettingsNotifier extends _$SettingsNotifier {
   /// Update brightness
   Future<void> setBrightness(double value) async {
     final clampedValue = value.clamp(0.0, 1.0);
+    // Track brightness change
+    final level = clampedValue < 0.2
+        ? 'min'
+        : clampedValue < 0.4
+            ? 'low'
+            : clampedValue < 0.6
+                ? 'medium'
+                : clampedValue < 0.8
+                    ? 'high'
+                    : 'max';
+    AnalyticsService.instance.trackBrightnessChange(level: level);
     final newSettings = state.settings.copyWith(brightness: clampedValue);
     await _updateSettings(newSettings);
   }

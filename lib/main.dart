@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'core/cache/cache_manager.dart';
 import 'core/data/providers/repository_providers.dart';
 import 'core/router/app_router.dart';
+import 'core/services/analytics_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
 import 'features/settings/presentation/providers/settings_notifier.dart';
@@ -19,6 +21,17 @@ void main() async {
   try {
     await Firebase.initializeApp();
     AppLogger.i('Firebase initialized');
+
+    // Initialize Analytics
+    final analytics = FirebaseAnalytics.instance;
+    // Set analytics collection enabled
+    await analytics.setAnalyticsCollectionEnabled(true);
+    // Initialize our AnalyticsService wrapper
+    AnalyticsService.instance.initialize(analytics);
+    AppLogger.i('Firebase Analytics initialized');
+
+    // Track app open
+    await AnalyticsService.instance.trackAppOpen();
 
     // Initialize Crashlytics
     final crashlytics = FirebaseCrashlytics.instance;
@@ -32,8 +45,8 @@ void main() async {
       AppLogger.i('Crashlytics disabled in debug mode');
     }
 
-    // Set user identifier (can be enhanced later with actual user ID)
-    await crashlytics.setUserIdentifier('user_${DateTime.now().millisecondsSinceEpoch}');
+    // Set user identifier to null initially - will be set when user signs in
+    await crashlytics.setUserIdentifier('');
 
     AppLogger.i('Crashlytics initialized');
   } catch (e, st) {

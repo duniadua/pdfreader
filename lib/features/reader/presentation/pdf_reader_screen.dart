@@ -7,6 +7,7 @@ import 'package:syncfusion_flutter_pdf/pdf.dart' as sync_pdf;
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/data/models/pdf_document.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'providers/pdf_reader_notifier.dart';
 
@@ -35,6 +36,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
     // Load bookmarks after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadBookmarks();
+      // Track screen view
+      AnalyticsService.instance.trackScreenView(
+        screenName: 'PdfReaderScreen',
+        screenClass: 'PdfReaderScreen',
+      );
     });
   }
 
@@ -551,6 +557,17 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                     onChanged: (value) async {
                       setDialogState(() => _brightness = value);
                       await ScreenBrightness.instance.setApplicationScreenBrightness(value);
+                      // Track brightness change
+                      final level = value < 0.2
+                          ? 'min'
+                          : value < 0.4
+                              ? 'low'
+                              : value < 0.6
+                                  ? 'medium'
+                                  : value < 0.8
+                                      ? 'high'
+                                      : 'max';
+                      AnalyticsService.instance.trackBrightnessChange(level: level);
                     },
                   ),
                 ),
@@ -587,6 +604,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   /// Rotate PDF viewer 90 degrees clockwise
   void _rotatePage() {
     setState(() => _rotationCount = (_rotationCount + 1) % 4);
+    // Track rotation change
+    final degrees = _rotationCount * 90;
+    AnalyticsService.instance.trackRotationChange(degrees: degrees);
   }
 
   /// Show zoom dialog
@@ -602,6 +622,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               title: const Text('50%'),
               onTap: () {
                 _pdfViewerController.zoomLevel = 0.5;
+                AnalyticsService.instance.trackZoomChange(zoomLevel: 0.5);
                 Navigator.pop(context);
               },
             ),
@@ -609,6 +630,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               title: const Text('100%'),
               onTap: () {
                 _pdfViewerController.zoomLevel = 1.0;
+                AnalyticsService.instance.trackZoomChange(zoomLevel: 1.0);
                 Navigator.pop(context);
               },
             ),
@@ -616,6 +638,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               title: const Text('150%'),
               onTap: () {
                 _pdfViewerController.zoomLevel = 1.5;
+                AnalyticsService.instance.trackZoomChange(zoomLevel: 1.5);
                 Navigator.pop(context);
               },
             ),
@@ -623,6 +646,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               title: const Text('200%'),
               onTap: () {
                 _pdfViewerController.zoomLevel = 2.0;
+                AnalyticsService.instance.trackZoomChange(zoomLevel: 2.0);
                 Navigator.pop(context);
               },
             ),
@@ -709,6 +733,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
       await Share.shareXFiles(
         [XFile(file.path, name: pdf.title, mimeType: 'application/pdf')],
         subject: pdf.title,
+      );
+      // Track share
+      AnalyticsService.instance.trackPdfShare(
+        pdfId: pdf.id,
+        method: 'share_intent',
       );
     } catch (e) {
       if (!mounted) return;

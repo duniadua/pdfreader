@@ -25,7 +25,7 @@ final appSettingsProvider = AutoDisposeFutureProvider<AppSettings>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AppSettingsRef = AutoDisposeFutureProviderRef<AppSettings>;
-String _$settingsNotifierHash() => r'8151d8641106ba74065fcd6ad7952206a0f326ad';
+String _$settingsNotifierHash() => r'a21eaa7c0f3e7de77e173d7707e327b0e71fd53e';
 
 /// Settings state notifier
 ///

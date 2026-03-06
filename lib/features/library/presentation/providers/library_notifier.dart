@@ -9,6 +9,7 @@ import '../../../../core/cache/cache_manager.dart';
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/data/providers/repository_providers.dart';
 import '../../../../core/data/repositories/pdf_repository.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../core/utils/exceptions.dart';
 import '../../../../core/utils/logger.dart';
 import '../library_screen.dart';
@@ -202,13 +203,28 @@ class LibraryNotifier extends _$LibraryNotifier {
 
   /// Toggle favorite status
   Future<void> toggleFavorite(String pdfId) async {
+    // Find PDF to check current favorite status before toggling
+    final pdf = state.allPdfs.firstWhere((p) => p.id == pdfId, orElse: () => state.allPdfs.first);
+
     final result = await _repository.toggleFavorite(pdfId);
     result.when(
       failure: (error, stackTrace) {
         AppLogger.e('Toggle favorite failed', error, stackTrace);
         state = state.copyWith(failure: _handleAppFailure(error, stackTrace));
+        // Track failed favorite toggle
+        AnalyticsService.instance.trackPdfFavorite(
+          pdfId: pdfId,
+          isFavorite: pdf.isFavorite,
+        );
       },
-      success: (_) => loadLibrary(),
+      success: (_) {
+        // Track successful favorite toggle (new state is opposite of current)
+        AnalyticsService.instance.trackPdfFavorite(
+          pdfId: pdfId,
+          isFavorite: !pdf.isFavorite,
+        );
+        loadLibrary();
+      },
     );
   }
 
@@ -223,7 +239,11 @@ class LibraryNotifier extends _$LibraryNotifier {
         AppLogger.e('Delete PDF failed', error, stackTrace);
         state = state.copyWith(failure: _handleAppFailure(error, stackTrace));
       },
-      success: (_) => loadLibrary(),
+      success: (_) {
+        // Track PDF deletion
+        AnalyticsService.instance.trackPdfDelete(pdfId: pdfId);
+        loadLibrary();
+      },
     );
   }
 
@@ -291,6 +311,8 @@ class LibraryNotifier extends _$LibraryNotifier {
       if (result == null || result.files.isEmpty) {
         // User cancelled
         state = state.copyWith(isLoading: false);
+        // Track cancelled import
+        AnalyticsService.instance.trackPdfImport(success: false);
         return;
       }
 
@@ -314,6 +336,8 @@ class LibraryNotifier extends _$LibraryNotifier {
           isLoading: false,
           failure: const AppFailure(message: 'Selected file is not a PDF'),
         );
+        // Track failed import (invalid file type)
+        AnalyticsService.instance.trackPdfImport(success: false);
         return;
       }
 
@@ -342,6 +366,8 @@ class LibraryNotifier extends _$LibraryNotifier {
         },
         success: (addedPdf) async {
           AppLogger.i('Successfully imported PDF: $fileName');
+          // Track successful PDF import
+          AnalyticsService.instance.trackPdfImport(success: true);
           // Generate thumbnail in background
           _repository.generateThumbnail(addedPdf.id).then((result) {
             result.when(
@@ -369,6 +395,8 @@ class LibraryNotifier extends _$LibraryNotifier {
       );
     } catch (e, st) {
       AppLogger.e('Error importing PDF', e, st);
+      // Track failed import
+      AnalyticsService.instance.trackPdfImport(success: false);
       state = state.copyWith(
         isLoading: false,
         failure: AppFailure(
@@ -389,6 +417,73 @@ class LibraryNotifier extends _$LibraryNotifier {
       cause: error,
       stackTrace: stackTrace,
     );
+  }
+
+  /// Import a PDF file that was downloaded from Drive
+  Future<void> importDownloadedPdf(String filePath, String fileName) async {
+    try {
+      final file = File(filePath);
+      if (!file.existsSync()) {
+        state = state.copyWith(
+          failure: const AppFailure(message: 'Downloaded file not found'),
+        );
+        return;
+      }
+
+      final fileSize = file.lengthSync();
+
+      // Create new PDF document
+      final pdfDocument = PdfDocument(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: fileName.replaceAll('.pdf', ''),
+        filePath: filePath,
+        fileSize: fileSize,
+        createdAt: DateTime.now(),
+        lastOpenedAt: DateTime.now(),
+        totalPages: 0, // Will be updated on first open
+      );
+
+      // Add to repository
+      final addResult = await _repository.addPdf(pdfDocument);
+
+      addResult.when(
+        failure: (error, stackTrace) {
+          AppLogger.e('Failed to import downloaded PDF', error, stackTrace);
+          state = state.copyWith(
+            failure: _handleAppFailure(error, stackTrace),
+          );
+        },
+        success: (addedPdf) async {
+          AppLogger.i('Successfully imported downloaded PDF: $fileName');
+          // Track successful PDF import
+          AnalyticsService.instance.trackPdfImport(success: true);
+          // Generate thumbnail in background
+          _repository.generateThumbnail(addedPdf.id).then((result) {
+            result.when(
+              success: (thumbnailPath) {
+                if (thumbnailPath != null) {
+                  AppLogger.i('Thumbnail generated: $thumbnailPath');
+                }
+              },
+              failure: (error, stackTrace) {
+                AppLogger.e('Failed to generate thumbnail', error, stackTrace);
+              },
+            );
+          });
+          // Load library to show the new file
+          loadLibrary();
+        },
+      );
+    } catch (e, st) {
+      AppLogger.e('Error importing downloaded PDF', e, st);
+      state = state.copyWith(
+        failure: AppFailure(
+          message: 'Failed to import PDF: ${e.toString()}',
+          cause: e,
+          stackTrace: st,
+        ),
+      );
+    }
   }
 }
 

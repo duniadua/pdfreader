@@ -7,7 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
+import '../../../../shared/widgets/profile_icon_button.dart';
+import '../../drive/presentation/providers/drive_notifier.dart';
+import '../../auth/presentation/widgets/login_bottom_sheet.dart';
+import '../../auth/data/auth_repository_provider.dart';
 import 'providers/library_notifier.dart';
 
 enum LibraryTab { library, favorites, timeline, cloud }
@@ -30,6 +36,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(libraryTabNotifierProvider.notifier).setTab(widget.initialTab);
+      // Track screen view
+      AnalyticsService.instance.trackScreenView(
+        screenName: 'LibraryScreen',
+        screenClass: 'LibraryScreen',
+      );
     });
   }
 
@@ -115,20 +126,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               child: Row(
                 children: [
-                  // Avatar with person icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: AppTheme.primary,
-                      size: 24,
-                    ),
-                  ),
+                  // Profile icon button (tappable)
+                  const ProfileIconButton(),
                   const SizedBox(width: 12),
                   // Title
                   Text(
@@ -168,6 +167,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ref
                         .read(searchQueryNotifierProvider.notifier)
                         .setQuery(value);
+                    // Track search (debounced by checking if value has meaningful content)
+                    if (value.isNotEmpty && value.length >= 3) {
+                      AnalyticsService.instance.trackPdfSearch(query: value);
+                    }
                   },
                   style: GoogleFonts.inter(
                     fontSize: 14,
@@ -752,19 +755,77 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildCloudTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final driveState = ref.watch(driveNotifierProvider);
 
+    // Auto-connect if user is signed in with Google but Drive is not connected
+    if (!driveState.isConnected && !driveState.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tryAutoConnectToDrive();
+      });
+    }
+
+    // Show loading state
+    if (driveState.isLoading && driveState.files.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              driveState.isConnected ? 'Loading your files...' : 'Connecting to Drive...',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show sign-in prompt if not connected
+    if (!driveState.isConnected) {
+      return _buildDriveSignInPrompt(isDark);
+    }
+
+    // Show empty state if no files
+    if (driveState.files.isEmpty) {
+      return _buildDriveEmptyState(isDark);
+    }
+
+    // Show file list
+    return _buildDriveFileList(driveState.files, isDark);
+  }
+
+  /// Try to auto-connect to Google Drive if user is already signed in
+  Future<void> _tryAutoConnectToDrive() async {
+    final authRepo = ref.read(firebaseAuthRepositoryProvider);
+    final credentials = await authRepo.getGoogleCredentials();
+
+    if (credentials != null) {
+      // User is already signed in with Google - auto-connect to Drive
+      await ref.read(driveNotifierProvider.notifier).connect(
+        accessToken: credentials['accessToken'] as String,
+        refreshToken: credentials['refreshToken'] as String,
+        expiry: credentials['expiry'] as DateTime,
+      );
+    }
+  }
+
+  Widget _buildDriveSignInPrompt(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.cloud_off,
+            Icons.cloud_outlined,
             size: 64,
             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
           ),
           const SizedBox(height: 16),
           Text(
-            'Cloud sync not available',
+            'Connect to Google Drive',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -773,15 +834,148 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'This is a local-only PDF reader',
+            'Sign in to access your PDF files from Google Drive',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => _connectToDrive(),
+            icon: const Icon(Icons.link),
+            label: Text(
+              'Sign in with Google',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildDriveEmptyState(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.folder_open,
+            size: 64,
+            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No PDF files found',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Upload PDFs to Google Drive to access them here',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+            ),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () => ref.read(driveNotifierProvider.notifier).loadDriveFiles(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Refresh'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDriveFileList(List files, bool isDark) {
+    return RefreshIndicator(
+      onRefresh: () => ref.read(driveNotifierProvider.notifier).loadDriveFiles(),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: files.length,
+        itemBuilder: (context, index) {
+          final file = files[index];
+          return _DriveFileListItem(
+            file: file,
+            onDownload: () => _downloadDriveFile(file),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _connectToDrive() async {
+    final authRepo = ref.read(firebaseAuthRepositoryProvider);
+
+    try {
+      // First ensure user is signed in with Google
+      final credentials = await authRepo.getGoogleCredentials();
+
+      if (credentials == null) {
+        // User needs to sign in first
+        if (mounted) {
+          showLoginBottomSheet(context, ref);
+        }
+        return;
+      }
+
+      // Connect to Drive with the credentials
+      final success = await ref.read(driveNotifierProvider.notifier).connect(
+        accessToken: credentials['accessToken'] as String,
+        refreshToken: credentials['refreshToken'] as String,
+        expiry: credentials['expiry'] as DateTime,
+      );
+
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to connect to Google Drive'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e('Failed to connect to Drive', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _downloadDriveFile(dynamic file) async {
+    final notifier = ref.read(driveNotifierProvider.notifier);
+    final localPath = await notifier.downloadPdf(file.id, file.name);
+
+    if (localPath != null && mounted) {
+      // Import the downloaded file into the library
+      await ref.read(libraryNotifierProvider.notifier).importDownloadedPdf(
+        localPath,
+        file.name,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${file.name} downloaded successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   void _openPdf(PdfDocument pdf) {
@@ -829,6 +1023,111 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+}
+
+/// List item for a Drive PDF file
+class _DriveFileListItem extends StatelessWidget {
+  const _DriveFileListItem({
+    required this.file,
+    required this.onDownload,
+  });
+
+  final dynamic file;
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayName = file.name.toLowerCase().endsWith('.pdf')
+        ? file.name.substring(0, file.name.length - 4)
+        : file.name;
+    final formattedSize = _formatFileSize(file.size ?? 0);
+
+    return InkWell(
+      onTap: onDownload,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark
+              ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+              : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // PDF Icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFCBD5E1),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.picture_as_pdf,
+                color: AppTheme.primary.withValues(alpha: 0.7),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // File info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formattedSize,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Download button
+            Icon(
+              Icons.download,
+              color: AppTheme.primary,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 

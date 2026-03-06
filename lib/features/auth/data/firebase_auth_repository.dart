@@ -117,17 +117,12 @@ class FirebaseAuthRepository {
   /// Returns null if user is not signed in with Google.
   Future<Map<String, dynamic>?> getGoogleCredentials() async {
     try {
-      print('[GoogleDrive] Checking Google Sign-In status...');
-
       // Try to sign in silently first - this restores the session if user was previously signed in
       final GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
 
       if (googleUser == null) {
-        print('[GoogleDrive] No Google user found after signInSilently');
         return null;
       }
-
-      print('[GoogleDrive] Google user found: ${googleUser.email}');
 
       // Get fresh authentication - this will get a new access token with current scopes
       final GoogleSignInAuthentication googleAuth =
@@ -138,11 +133,7 @@ class FirebaseAuthRepository {
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
 
-      print('[GoogleDrive] Access token obtained: ${accessToken != null ? "YES" : "NO"}');
-      print('[GoogleDrive] Scopes: drive.readonly');
-
       if (accessToken == null) {
-        print('[GoogleDrive] Access token is null');
         return null;
       }
 
@@ -155,7 +146,6 @@ class FirebaseAuthRepository {
         'expiry': expiry,
       };
     } on Exception catch (e) {
-      print('[GoogleDrive] Error getting credentials: ${e.toString()}');
       throw Exception('Failed to get Google credentials: ${e.toString()}');
     }
   }

@@ -112,22 +112,15 @@ class GoogleDriveService {
   /// Fetch user information to get email
   Future<void> _fetchUserInfo() async {
     try {
-      if (_driveApi == null) {
-        print('[GoogleDriveService] _fetchUserInfo: _driveApi is null');
-        return;
-      }
+      if (_driveApi == null) return;
 
-      AppLogger.i('Fetching Drive user info...');
-      print('[GoogleDriveService] Fetching user info from Drive API...');
       final about = await _driveApi!.about.get(
         $fields: 'user(emailAddress,displayName)',
       );
 
       _currentUserEmail = about.user?.emailAddress;
-      print('[GoogleDriveService] Got user email: $_currentUserEmail');
       AppLogger.i('Google Drive user: $_currentUserEmail');
     } catch (e, st) {
-      print('[GoogleDriveService] Failed to fetch user info: $e');
       AppLogger.e('Could not fetch user info', e, st);
       // Don't fail completely - user info is not critical
     }
@@ -135,16 +128,13 @@ class GoogleDriveService {
 
   /// List all PDF files from Google Drive
   Future<List<DriveFile>> listPdfs() async {
-    print('[GoogleDriveService] listPdfs called - _driveApi: ${_driveApi != null}, isTokenExpired: $isTokenExpired');
     if (_driveApi == null || isTokenExpired) {
       AppLogger.w('Drive API not initialized or token expired');
-      print('[GoogleDriveService] Cannot fetch - API null or token expired');
       return [];
     }
 
     try {
       AppLogger.i('Fetching PDF files from Google Drive...');
-      print('[GoogleDriveService] Calling Drive API...');
 
       final response = await _driveApi!.files.list(
         q: "mimeType='application/pdf'",
@@ -154,7 +144,6 @@ class GoogleDriveService {
 
       final files = response.files ?? [];
       AppLogger.i('Found ${files.length} PDF files in Drive');
-      print('[GoogleDriveService] API returned ${files.length} files');
 
       return files.map((file) => DriveFile(
         id: file.id ?? '',
@@ -165,8 +154,6 @@ class GoogleDriveService {
         webViewLink: file.webViewLink,
       )).toList();
     } catch (e, st) {
-      print('[GoogleDriveService] ERROR: $e');
-      print('[GoogleDriveService] StackTrace: $st');
       AppLogger.e('Failed to list Drive files', e, st);
       return [];
     }

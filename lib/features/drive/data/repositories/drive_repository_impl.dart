@@ -51,14 +51,11 @@ class DriveRepositoryImpl implements DriveRepository {
     required DateTime expiry,
   }) async {
     try {
-      print('[DriveRepository] Setting credentials...');
       // Initialize the service with the access token from Google Sign-In
       await _service.initialize(accessToken: accessToken);
 
-      print('[DriveRepository] Credentials set successfully');
       return const DriveResult.success(true);
     } catch (e, st) {
-      print('[DriveRepository] Set credentials failed: $e');
       AppLogger.e('Set credentials failed', e, st);
       return DriveResult.failure(
         DriveFailure.unknown(e.toString()),
@@ -88,9 +85,7 @@ class DriveRepositoryImpl implements DriveRepository {
 
   @override
   Future<DriveResult<List<DriveFileModel>>> getPdfFiles() async {
-    print('[DriveRepository] Getting PDF files... isSignedIn: ${_service.isSignedIn}');
     if (!_service.isSignedIn) {
-      print('[DriveRepository] Not signed in to Drive');
       return const DriveResult.failure(
         DriveFailure.notAuthenticated(),
       );
@@ -98,7 +93,6 @@ class DriveRepositoryImpl implements DriveRepository {
 
     try {
       final driveFiles = await _service.listPdfs();
-      print('[DriveRepository] Got ${driveFiles.length} files from Drive service');
 
       final models = driveFiles.map((file) => DriveFileModel(
         id: file.id,
@@ -109,10 +103,8 @@ class DriveRepositoryImpl implements DriveRepository {
         webViewLink: file.webViewLink,
       )).toList();
 
-      print('[DriveRepository] Converted to ${models.length} DriveFileModel instances');
       return DriveResult.success(models);
     } catch (e, st) {
-      print('[DriveRepository] Failed to get PDF files: $e');
       AppLogger.e('Failed to get PDF files', e, st);
       return DriveResult.failure(
         DriveFailure.networkError(e.toString()),

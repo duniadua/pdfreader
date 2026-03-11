@@ -12,6 +12,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../shared/widgets/profile_icon_button.dart';
 import '../../drive/presentation/providers/drive_notifier.dart';
+import '../../drive/presentation/providers/drive_state.dart';
 import '../../auth/presentation/widgets/login_bottom_sheet.dart';
 import '../../auth/data/auth_repository_provider.dart';
 import 'providers/library_notifier.dart';
@@ -353,7 +354,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                _buildSectionHeader('Recent', onSeeAll: () {}),
+                _buildSectionHeader(
+                  'Recent',
+                  onSeeAll: () {
+                    ref
+                        .read(libraryTabNotifierProvider.notifier)
+                        .setTab(LibraryTab.timeline);
+                  },
+                ),
                 const SizedBox(height: 12),
                 _buildRecentSection(state.recentPdfs),
                 const SizedBox(height: 24),
@@ -634,18 +642,148 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildDocumentGrid(List<PdfDocument> pdfs) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.68,
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
           final pdf = pdfs[index];
-          return _buildRecentCard(pdf);
+          return _buildGridCard(pdf);
         }, childCount: pdfs.length),
+      ),
+    );
+  }
+
+  Widget _buildGridCard(PdfDocument pdf) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayTitle = pdf.title.isEmpty ? 'Untitled PDF' : pdf.title;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Thumbnail
+        GestureDetector(
+          onTap: () => _openPdf(pdf),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: 1 / 1.1,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // PDF thumbnail with fallback to icon
+                    if (pdf.thumbnailPath != null &&
+                        pdf.thumbnailPath!.isNotEmpty &&
+                        File(pdf.thumbnailPath!).existsSync())
+                      Image.file(
+                        File(pdf.thumbnailPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildThumbnailFallback(isDark);
+                        },
+                      )
+                    else
+                      _buildThumbnailFallback(isDark),
+                    // Progress bar at bottom
+                    if (pdf.progress != null)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.3),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: FractionallySizedBox(
+                            widthFactor: pdf.progressPercentage,
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primary,
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6), // Same as Recent section
+        // Title and time
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                displayTitle,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  height: 1.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1), // Same as Recent section
+              Text(
+                _formatRelativeTime(pdf.lastOpenedAt),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
+                  letterSpacing: 0.3,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThumbnailFallback(bool isDark) {
+    return Container(
+      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+      child: Center(
+        child: Icon(
+          Icons.picture_as_pdf,
+          size: 40,
+          color: AppTheme.primary.withValues(alpha: 0.5),
+        ),
       ),
     );
   }
@@ -773,10 +911,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
             Text(
-              driveState.isConnected ? 'Loading your files...' : 'Connecting to Drive...',
+              driveState.isConnected
+                  ? 'Loading your files...'
+                  : 'Connecting to Drive...',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
               ),
             ),
           ],
@@ -805,11 +947,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     if (credentials != null) {
       // User is already signed in with Google - auto-connect to Drive
-      await ref.read(driveNotifierProvider.notifier).connect(
-        accessToken: credentials['accessToken'] as String,
-        refreshToken: credentials['refreshToken'] as String,
-        expiry: credentials['expiry'] as DateTime,
-      );
+      await ref
+          .read(driveNotifierProvider.notifier)
+          .connect(
+            accessToken: credentials['accessToken'] as String,
+            refreshToken: credentials['refreshToken'] as String,
+            expiry: credentials['expiry'] as DateTime,
+          );
     }
   }
 
@@ -889,7 +1033,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () => ref.read(driveNotifierProvider.notifier).loadDriveFiles(),
+            onPressed: () =>
+                ref.read(driveNotifierProvider.notifier).loadDriveFiles(),
             icon: const Icon(Icons.refresh),
             label: const Text('Refresh'),
           ),
@@ -899,18 +1044,104 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Widget _buildDriveFileList(List files, bool isDark) {
-    return RefreshIndicator(
-      onRefresh: () => ref.read(driveNotifierProvider.notifier).loadDriveFiles(),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: files.length,
-        itemBuilder: (context, index) {
-          final file = files[index];
-          return _DriveFileListItem(
-            file: file,
-            onDownload: () => _downloadDriveFile(file),
-          );
-        },
+    final driveState = ref.watch(driveNotifierProvider);
+
+    return Column(
+      children: [
+        // Cache indicator banner - show consistently when there's sync time
+        if (driveState.lastSyncTime != null)
+          _buildCacheIndicatorBanner(driveState, isDark),
+
+        // File list with pull-to-refresh
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(driveNotifierProvider.notifier).refreshDriveFiles(),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: files.length,
+              itemBuilder: (context, index) {
+                final file = files[index];
+                return _DriveFileListItem(
+                  file: file,
+                  onDownload: () => _downloadDriveFile(file),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCacheIndicatorBanner(DriveState driveState, bool isDark) {
+    final age = driveState.formattedCacheAge ?? 'just now';
+    final isStale = driveState.isCacheStale;
+    final isRefreshing = driveState.isRefreshing;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isStale
+            ? (isDark
+                  ? const Color(0xFF92400E).withValues(alpha: 0.2)
+                  : const Color(0xFFFEF3C7))
+            : (isDark
+                  ? const Color(0xFF065F46).withValues(alpha: 0.2)
+                  : const Color(0xFFD1FAE5)),
+        border: Border(
+          bottom: BorderSide(
+            color: isStale
+                ? (isDark
+                      ? const Color(0xFF92400E).withValues(alpha: 0.3)
+                      : const Color(0xFFFCD34D))
+                : (isDark
+                      ? const Color(0xFF065F46).withValues(alpha: 0.3)
+                      : const Color(0xFF6EE7B7)),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (isRefreshing)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(
+              Icons.cloud_done,
+              size: 16,
+              color: isStale
+                  ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706))
+                  : (isDark
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFF059669)),
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isRefreshing
+                  ? 'Refreshing...'
+                  : isStale
+                  ? 'Updated $age • Pull to refresh'
+                  : 'Updated $age',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: isStale
+                    ? (isDark
+                          ? const Color(0xFFFBBF24)
+                          : const Color(0xFFD97706))
+                    : (isDark
+                          ? const Color(0xFF34D399)
+                          : const Color(0xFF059669)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -931,11 +1162,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       }
 
       // Connect to Drive with the credentials
-      final success = await ref.read(driveNotifierProvider.notifier).connect(
-        accessToken: credentials['accessToken'] as String,
-        refreshToken: credentials['refreshToken'] as String,
-        expiry: credentials['expiry'] as DateTime,
-      );
+      final success = await ref
+          .read(driveNotifierProvider.notifier)
+          .connect(
+            accessToken: credentials['accessToken'] as String,
+            refreshToken: credentials['refreshToken'] as String,
+            expiry: credentials['expiry'] as DateTime,
+          );
 
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -964,10 +1197,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     if (localPath != null && mounted) {
       // Import the downloaded file into the library
-      await ref.read(libraryNotifierProvider.notifier).importDownloadedPdf(
-        localPath,
-        file.name,
-      );
+      await ref
+          .read(libraryNotifierProvider.notifier)
+          .importDownloadedPdf(localPath, file.name);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1028,10 +1260,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
 /// List item for a Drive PDF file
 class _DriveFileListItem extends StatelessWidget {
-  const _DriveFileListItem({
-    required this.file,
-    required this.onDownload,
-  });
+  const _DriveFileListItem({required this.file, required this.onDownload});
 
   final dynamic file;
   final VoidCallback onDownload;
@@ -1111,11 +1340,7 @@ class _DriveFileListItem extends StatelessWidget {
             ),
 
             // Download button
-            Icon(
-              Icons.download,
-              color: AppTheme.primary,
-              size: 20,
-            ),
+            Icon(Icons.download, color: AppTheme.primary, size: 20),
           ],
         ),
       ),

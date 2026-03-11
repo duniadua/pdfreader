@@ -187,14 +187,3 @@ class SettingsNotifier extends _$SettingsNotifier {
     );
   }
 }
-
-/// Simplified provider for just app settings (for theme selection)
-@riverpod
-Future<AppSettings> appSettings(Ref ref) async {
-  final repository = ref.watch(settingsRepositoryProvider);
-  final result = await repository.getSettings();
-  return result.when(
-    success: (settings) => settings,
-    failure: (error, stackTrace) => AppSettings.defaultSettings(),
-  );
-}

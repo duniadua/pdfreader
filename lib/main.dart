@@ -87,111 +87,16 @@ class PdfReaderApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final settingsAsync = ref.watch(appSettingsProvider);
+    final settingsState = ref.watch(settingsNotifierProvider);
+    final settings = settingsState.settings;
 
-    return settingsAsync.when(
-      data: (settings) {
-        return MaterialApp.router(
-          title: 'PDF Reader',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme(),
-          darkTheme: AppTheme.darkTheme(),
-          themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
-          routerConfig: router,
-        );
-      },
-      loading: () => MaterialApp(
-        title: 'PDF Reader',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme(),
-        home: const _SplashScreen(),
-      ),
-      error: (error, stackTrace) => MaterialApp(
-        title: 'PDF Reader',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme(),
-        home: _ErrorScreen(error: error, stackTrace: stackTrace),
-      ),
-    );
-  }
-}
-
-/// Splash screen shown while loading
-class _SplashScreen extends StatelessWidget {
-  const _SplashScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.picture_as_pdf,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              'Loading...',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Error screen shown on initialization failure
-class _ErrorScreen extends StatelessWidget {
-  const _ErrorScreen({
-    required this.error,
-    required this.stackTrace,
-  });
-
-  final Object error;
-  final StackTrace stackTrace;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Initialization Error',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                error.toString(),
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  // Could implement retry logic here
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return MaterialApp.router(
+      title: 'PDF Reader',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme(),
+      darkTheme: AppTheme.darkTheme(),
+      themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
+      routerConfig: router,
     );
   }
 }

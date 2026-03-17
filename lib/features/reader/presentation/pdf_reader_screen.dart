@@ -9,7 +9,10 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import 'providers/pdf_reader_notifier.dart';
+import 'providers/pdf_chat_notifier.dart';
+import 'widgets/pdf_chat_panel.dart';
 
 /// PDF Reader Screen - displays PDF documents with full functionality
 class PdfReaderScreen extends ConsumerStatefulWidget {
@@ -29,6 +32,8 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   int _rotationCount = 0; // 0, 1, 2, 3 (x90 degrees)
   double _brightness = 0.5;
   List<_PdfBookmark> _bookmarks = [];
+  int _currentPage = 1;
+  int _totalPages = 1;
 
   @override
   void initState() {
@@ -104,6 +109,12 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
             onPressed: () {
               ref.read(pdfReaderNotifierProvider(widget.pdfId).notifier).toggleFavorite();
             },
+            tooltip: 'Bookmark',
+          ),
+          IconButton(
+            icon: const Icon(Icons.auto_awesome, size: 20),
+            onPressed: () => _showChatPanel(pdf),
+            tooltip: 'AI Assistant',
           ),
           _buildMoreButton(pdf),
         ],
@@ -144,7 +155,12 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
       loading: () => const Center(
         child: CircularProgressIndicator(),
       ),
-      loaded: (pdf) => Stack(
+      loaded: (pdf) {
+        // Initialize page tracking from PDF
+        _totalPages = pdf.totalPages;
+        _currentPage = pdf.progress?.currentPage ?? 1;
+
+        return Stack(
         children: [
           // PDF Viewer with rotation support
           Transform.rotate(
@@ -155,6 +171,13 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               controller: _pdfViewerController,
               onPageChanged: (pageDetails) {
                 ref.read(pdfReaderNotifierProvider(widget.pdfId).notifier).onPageChanged(pageDetails.newPageNumber);
+                // Update local state for page indicator
+                if (mounted) {
+                  setState(() {
+                    _currentPage = pageDetails.newPageNumber;
+                    _totalPages = _pdfViewerController.pageCount;
+                  });
+                }
               },
               canShowScrollHead: true,
               canShowScrollStatus: true,
@@ -172,7 +195,8 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
             ),
           ),
         ],
-      ),
+      ); // End Stack
+      }, // End loaded callback
       notFound: () => _buildErrorView(
         icon: Icons.search_off,
         title: 'PDF Not Found',
@@ -201,9 +225,6 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   /// Build page indicator overlay
   Widget _buildPageIndicator(PdfDocument pdf) {
-    final currentPage = _pdfViewerController.pageNumber;
-    final totalPages = _pdfViewerController.pageCount;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -212,7 +233,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Text(
-        '$currentPage of $totalPages',
+        '$_currentPage of $_totalPages',
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
@@ -296,15 +317,13 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   /// Build page scrubber slider
   Widget _buildPageScrubber(PdfDocument pdf) {
-    final currentPage = _pdfViewerController.pageNumber;
-    final totalPages = _pdfViewerController.pageCount;
-    final scrollPosition = totalPages > 0 ? (currentPage - 1) / totalPages : 0.0;
+    final scrollPosition = _totalPages > 0 ? (_currentPage - 1) / _totalPages : 0.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
         children: [
-          Text('$currentPage', style: const TextStyle(fontSize: 10)),
+          Text('$_currentPage', style: const TextStyle(fontSize: 10)),
           Expanded(
             child: SliderTheme(
               data: SliderThemeData(
@@ -315,13 +334,13 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               child: Slider(
                 value: scrollPosition,
                 onChanged: (value) {
-                  final newPage = (value * totalPages).round() + 1;
+                  final newPage = (value * _totalPages).round() + 1;
                   _pdfViewerController.jumpToPage(newPage);
                 },
               ),
             ),
           ),
-          Text('$totalPages', style: const TextStyle(fontSize: 10)),
+          Text('$_totalPages', style: const TextStyle(fontSize: 10)),
         ],
       ),
     );
@@ -745,6 +764,40 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
         SnackBar(content: Text('Failed to share: $e')),
       );
     }
+  }
+
+  /// Show AI chat panel for PDF interaction
+  Future<void> _showChatPanel(PdfDocument pdf) async {
+    // Open the chat panel state
+    ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).openPanel();
+
+    // Initialize with PDF
+    await ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).initializeWithPdf(pdf);
+
+    if (!mounted) return;
+
+    // Show the modal bottom sheet
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.4,
+        maxChildSize: 0.98,
+        expand: false,
+        builder: (context, scrollController) => PdfChatPanel(
+          pdfId: widget.pdfId,
+          pdfPath: pdf.filePath,
+          pdfTitle: pdf.title,
+        ),
+      ),
+    );
+
+    // Track AI chat open (optional - analytics would be tracked in production)
+    AppLogger.i('AI chat opened for PDF: ${widget.pdfId}');
   }
 }
 

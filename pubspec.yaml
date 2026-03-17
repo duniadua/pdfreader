@@ -57,10 +57,14 @@ dependencies:
   firebase_crashlytics: ^4.2.4
   firebase_auth: ^5.1.2
   google_sign_in: ^6.2.1
+  cloud_functions: ^5.6.2
 
   # Google Drive Integration
   googleapis: ^13.2.0
   http: ^1.2.0
+
+  # AI Chat Feature
+  flutter_markdown: ^0.7.4
 
 dev_dependencies:
   flutter_test:

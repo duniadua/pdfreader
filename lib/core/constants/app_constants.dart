@@ -22,7 +22,7 @@ class AppConstants {
   static const double maxFontSize = 24.0;
   static const double defaultFontSize = 14.0;
   static const double defaultBrightness = 0.75;
-  static const bool defaultDarkMode = true;
+  static const bool defaultDarkMode = false;
   static const bool defaultAutoCrop = true;
   static const ScrollDirection defaultScrollDirection = ScrollDirection.vertical;
 

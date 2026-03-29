@@ -6,7 +6,7 @@ part of 'pdf_chat_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pdfAIServiceHash() => r'5136af5eaa8e55ed5b496bad9ccd0eadba86d318';
+String _$pdfAIServiceHash() => r'fd08f8a3584c8f8e34a083e66d8a7bbe61acf9d0';
 
 /// Provider for PDF AI service
 ///
@@ -25,7 +25,7 @@ final pdfAIServiceProvider = AutoDisposeProvider<PdfAIService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef PdfAIServiceRef = AutoDisposeProviderRef<PdfAIService>;
-String _$pdfChatNotifierHash() => r'8294c740e58995ee7e632aeed5cf3f1736debc3c';
+String _$pdfChatNotifierHash() => r'bd1765d2a6a77f8d388f04a526d06f68880798df';
 
 /// Copied from Dart SDK
 class _SystemHash {

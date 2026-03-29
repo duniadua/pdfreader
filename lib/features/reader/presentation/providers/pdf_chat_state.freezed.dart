@@ -315,6 +315,7 @@ mixin _$PdfChatState {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )
     visible,
     required TResult Function() hidden,
@@ -329,6 +330,7 @@ mixin _$PdfChatState {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult? Function()? hidden,
@@ -343,6 +345,7 @@ mixin _$PdfChatState {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult Function()? hidden,
@@ -443,6 +446,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )
     visible,
     required TResult Function() hidden,
@@ -461,6 +465,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult? Function()? hidden,
@@ -479,6 +484,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult Function()? hidden,
@@ -543,6 +549,7 @@ abstract class _$$PdfChatStateVisibleImplCopyWith<$Res> {
     double? extractProgress,
     String? error,
     String? extractedText,
+    String? currentPdfPath,
   });
 }
 
@@ -566,6 +573,7 @@ class __$$PdfChatStateVisibleImplCopyWithImpl<$Res>
     Object? extractProgress = freezed,
     Object? error = freezed,
     Object? extractedText = freezed,
+    Object? currentPdfPath = freezed,
   }) {
     return _then(
       _$PdfChatStateVisibleImpl(
@@ -593,6 +601,10 @@ class __$$PdfChatStateVisibleImplCopyWithImpl<$Res>
             ? _value.extractedText
             : extractedText // ignore: cast_nullable_to_non_nullable
                   as String?,
+        currentPdfPath: freezed == currentPdfPath
+            ? _value.currentPdfPath
+            : currentPdfPath // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -608,6 +620,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
     this.extractProgress,
     this.error,
     this.extractedText,
+    this.currentPdfPath,
   }) : _messages = messages;
 
   /// All messages in the conversation
@@ -644,9 +657,13 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
   @override
   final String? extractedText;
 
+  /// The current PDF file path (persists across provider rebuilds)
+  @override
+  final String? currentPdfPath;
+
   @override
   String toString() {
-    return 'PdfChatState.visible(messages: $messages, isLoading: $isLoading, isExtractingText: $isExtractingText, extractProgress: $extractProgress, error: $error, extractedText: $extractedText)';
+    return 'PdfChatState.visible(messages: $messages, isLoading: $isLoading, isExtractingText: $isExtractingText, extractProgress: $extractProgress, error: $error, extractedText: $extractedText, currentPdfPath: $currentPdfPath)';
   }
 
   @override
@@ -663,7 +680,9 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
                 other.extractProgress == extractProgress) &&
             (identical(other.error, error) || other.error == error) &&
             (identical(other.extractedText, extractedText) ||
-                other.extractedText == extractedText));
+                other.extractedText == extractedText) &&
+            (identical(other.currentPdfPath, currentPdfPath) ||
+                other.currentPdfPath == currentPdfPath));
   }
 
   @override
@@ -675,6 +694,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
     extractProgress,
     error,
     extractedText,
+    currentPdfPath,
   );
 
   /// Create a copy of PdfChatState
@@ -699,6 +719,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )
     visible,
     required TResult Function() hidden,
@@ -710,6 +731,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       extractProgress,
       error,
       extractedText,
+      currentPdfPath,
     );
   }
 
@@ -724,6 +746,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult? Function()? hidden,
@@ -735,6 +758,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       extractProgress,
       error,
       extractedText,
+      currentPdfPath,
     );
   }
 
@@ -749,6 +773,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult Function()? hidden,
@@ -762,6 +787,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
         extractProgress,
         error,
         extractedText,
+        currentPdfPath,
       );
     }
     return orElse();
@@ -810,6 +836,7 @@ abstract class _PdfChatStateVisible implements PdfChatState {
     final double? extractProgress,
     final String? error,
     final String? extractedText,
+    final String? currentPdfPath,
   }) = _$PdfChatStateVisibleImpl;
 
   /// All messages in the conversation
@@ -829,6 +856,9 @@ abstract class _PdfChatStateVisible implements PdfChatState {
 
   /// The extracted PDF text for AI context
   String? get extractedText;
+
+  /// The current PDF file path (persists across provider rebuilds)
+  String? get currentPdfPath;
 
   /// Create a copy of PdfChatState
   /// with the given fields replaced by the non-null parameter values.
@@ -888,6 +918,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )
     visible,
     required TResult Function() hidden,
@@ -906,6 +937,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult? Function()? hidden,
@@ -924,6 +956,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       double? extractProgress,
       String? error,
       String? extractedText,
+      String? currentPdfPath,
     )?
     visible,
     TResult Function()? hidden,

@@ -35,6 +35,7 @@ dependencies:
   # Local Storage
   path_provider: ^2.1.5
   shared_preferences: ^2.3.3
+  sqflite: ^2.3.0
 
   # File Handling
   file_picker: ^8.1.6

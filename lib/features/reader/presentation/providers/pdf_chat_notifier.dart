@@ -1,28 +1,199 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/services/pdf_ai_service.dart';
+import '../../../../core/data/repositories/chat_repository.dart';
 import '../../../../core/utils/logger.dart';
 import 'pdf_chat_state.dart';
+
+// Forward declaration to avoid circular dependency
+// The repository will use RepositoryChatMessage internally
 
 part 'pdf_chat_notifier.g.dart';
 
 /// Provider for PDF AI service
 @riverpod
 PdfAIService pdfAIService(PdfAIServiceRef ref) {
-  return PdfAIService();
+  return PdfAIService(
+    functions: FirebaseFunctions.instanceFor(region: 'asia-southeast1'),
+    auth: FirebaseAuth.instance,
+  );
 }
 
 /// Provider for PDF chat state management
 @riverpod
 class PdfChatNotifier extends _$PdfChatNotifier {
+  // Static cache that persists across provider instances
+  static final Map<String, String> _pdfPathCache = {};
+  static final Map<String, PdfDocument> _pdfCache = {};
+
   PdfAIService? _aiService;
-  String? _currentPdfPath;
+  ChatRepository? _chatRepository;
+
+  // Store current chat session ID
+  String? _currentSessionId;
+
+  // Store current PDF document
+  PdfDocument? _currentPdf;
 
   @override
   PdfChatState build(String pdfId) {
+    AppLogger.i('=== PdfChatNotifier.build() called ===');
+    AppLogger.i('pdfId parameter: $pdfId');
     _aiService = ref.watch(pdfAIServiceProvider);
+    _chatRepository = ref.watch(chatRepositoryProvider);
+    AppLogger.i('✅ _aiService initialized');
+    AppLogger.i('✅ _chatRepository initialized');
+
+    // Try to load chat history for this PDF
+    _loadChatHistory(pdfId);
+
+    // Check if we have a cached PDF path for this pdfId
+    final cachedPath = _pdfPathCache[pdfId];
+    if (cachedPath != null) {
+      AppLogger.i('✅ Found cached PDF path for $pdfId: $cachedPath');
+      // Return state with cached path (messages will be loaded asynchronously)
+      return PdfChatState.visible(currentPdfPath: cachedPath);
+    }
+
+    AppLogger.i('No cached PDF path for $pdfId, returning initial state');
     return const PdfChatState.initial();
+  }
+
+  /// Toggle chat panel visibility
+  void togglePanel() {
+    state = state.isVisible ? const PdfChatState.hidden() : const PdfChatState.visible();
+  }
+
+  /// Load chat history for a PDF from database
+  Future<void> _loadChatHistory(String pdfId) async {
+    if (_chatRepository == null) {
+      AppLogger.w('Chat repository not available, skipping history load');
+      return;
+    }
+
+    try {
+      AppLogger.i('Loading chat history for PDF: $pdfId');
+      final sessionResult = await _chatRepository!.getSessionByPdfId(pdfId);
+
+      await sessionResult.onSuccess((session) async {
+        if (session != null) {
+          AppLogger.i('Found existing session: ${session.id}');
+          _currentSessionId = session.id;
+
+          // Load messages for this session
+          final messagesResult = await _chatRepository!.getMessages(session.id);
+          await messagesResult.onSuccess((repoMessages) {
+            AppLogger.i('Loaded ${repoMessages.length} messages from database');
+            // Convert RepositoryChatMessage to ChatMessage
+            final messages = repoMessages.map((repoMsg) {
+              return ChatMessage(
+                id: repoMsg.id,
+                content: repoMsg.content,
+                isUser: repoMsg.isUser,
+                timestamp: repoMsg.timestamp,
+                isProcessing: repoMsg.isProcessing,
+                error: repoMsg.error,
+              );
+            }).toList();
+            // Update state with loaded messages
+            state = PdfChatState.visible(
+              messages: messages,
+              currentPdfPath: session.pdfFilePath,
+            );
+          }).onFailure((error, stackTrace) {
+            AppLogger.e('Failed to load messages', error, stackTrace);
+            // Continue with empty state on error
+          });
+        } else {
+          AppLogger.i('No existing session found for PDF: $pdfId');
+          _currentSessionId = null;
+        }
+      }).onFailure((error, stackTrace) {
+        AppLogger.e('Failed to get session from database', error, stackTrace);
+        // Continue with empty state on error
+        _currentSessionId = null;
+      });
+    } catch (e, st) {
+      AppLogger.e('Error loading chat history', e, st);
+      _currentSessionId = null;
+    }
+  }
+
+  /// Save a message to the database
+  Future<void> _saveMessage(ChatMessage message) async {
+    if (_chatRepository == null || _currentSessionId == null) {
+      AppLogger.w('Cannot save message: repository or session not available');
+      return;
+    }
+
+    try {
+      // Convert ChatMessage to RepositoryChatMessage
+      final repoMessage = RepositoryChatMessage(
+        id: message.id,
+        content: message.content,
+        isUser: message.isUser,
+        timestamp: message.timestamp,
+        isProcessing: message.isProcessing,
+        error: message.error,
+      );
+      await _chatRepository!.addMessage(_currentSessionId!, repoMessage);
+      AppLogger.d('Saved message to database');
+    } catch (e, st) {
+      AppLogger.e('Failed to save message to database', e, st);
+      // Don't throw - keep message in memory at least
+    }
+  }
+
+  /// Update session metadata (message count, last message time)
+  Future<void> _updateSessionMetadata() async {
+    if (_chatRepository == null || _currentSessionId == null) {
+      return;
+    }
+
+    try {
+      final messageCount = state.messages.length;
+      final lastMessage = state.messages.isNotEmpty
+          ? state.messages.last.timestamp.millisecondsSinceEpoch
+          : null;
+
+      await _chatRepository!.updateSessionMetadata(
+        sessionId: _currentSessionId!,
+        messageCount: messageCount,
+        lastMessageAt: lastMessage,
+      );
+      AppLogger.d('Updated session metadata');
+    } catch (e, st) {
+      AppLogger.e('Failed to update session metadata', e, st);
+    }
+  }
+
+  /// Get or create chat session for current PDF
+  Future<void> _getOrCreateSession() async {
+    if (_chatRepository == null || _currentPdf == null) {
+      AppLogger.w('Cannot get/create session: repository or PDF not available');
+      return;
+    }
+
+    try {
+      final result = await _chatRepository!.getOrCreateSession(
+        _currentPdf!.id,
+        _currentPdf!,
+      );
+
+      result.onSuccess((session) {
+        _currentSessionId = session.id;
+        AppLogger.i('Session ready: ${session.id}');
+      }).onFailure((error, st) {
+        AppLogger.e('Failed to get or create session', error, st);
+        _currentSessionId = null;
+      });
+    } catch (e, st) {
+      AppLogger.e('Error getting or creating session', e, st);
+      _currentSessionId = null;
+    }
   }
 
   /// Toggle chat panel visibility
@@ -32,9 +203,20 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
   /// Open the chat panel
   void openPanel() {
+    AppLogger.i('=== openPanel called ===');
+    AppLogger.i('State before: isVisible=${state.isVisible}');
     if (!state.isVisible) {
-      state = const PdfChatState.visible();
+      // Preserve currentPdfPath, messages, and extractedText
+      state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
+        messages: state.messages,
+        extractedText: state.extractedText,
+      );
+      AppLogger.i('✅ Set state to visible (preserved data)');
+    } else {
+      AppLogger.i('State already visible');
     }
+    AppLogger.i('State after: isVisible=${state.isVisible}');
   }
 
   /// Close the chat panel
@@ -44,52 +226,81 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
   /// Initialize with PDF document for text extraction
   Future<void> initializeWithPdf(PdfDocument pdf) async {
-    if (_currentPdfPath == pdf.filePath && state.extractedText != null) {
+    AppLogger.i('=== initializeWithPdf called ===');
+    AppLogger.i('pdf.id: ${pdf.id}');
+    AppLogger.i('PDF title: ${pdf.title}');
+    AppLogger.i('PDF filePath: ${pdf.filePath}');
+    AppLogger.i('Current state.currentPdfPath before: ${state.currentPdfPath}');
+
+    // Cache the PDF document
+    _pdfCache[pdf.id] = pdf;
+    _currentPdf = pdf;
+
+    // Cache the PDF path
+    _pdfPathCache[pdf.id] = pdf.filePath;
+    AppLogger.i('✅ Cached PDF document and path for ${pdf.id}');
+
+    if (state.currentPdfPath == pdf.filePath && state.extractedText != null) {
       // Already initialized with this PDF
+      AppLogger.i('Already initialized, skipping');
       return;
     }
 
-    _currentPdfPath = pdf.filePath;
-    if (!state.isVisible) {
-      state = const PdfChatState.visible();
-    }
+    // Store PDF path in state (persists across provider rebuilds)
+    state = PdfChatState.visible(currentPdfPath: pdf.filePath);
+    AppLogger.i('✅ Set state.currentPdfPath to: ${state.currentPdfPath}');
   }
 
   /// Extract text from the PDF document
   Future<void> extractPdfText(String filePath) async {
-    if (!state.isVisible || _aiService == null) {
+    AppLogger.i('=== extractPdfText called ===');
+    AppLogger.i('File path: $filePath');
+
+    // Removed isVisible check - if this method is called, panel is open
+    if (_aiService == null) {
+      AppLogger.w('❌ AI Service is null');
       return;
     }
 
-    // Update to extracting state
-    state = const PdfChatState.visible(
+    AppLogger.i('✅ Starting extraction...');
+    // Update to extracting state, preserve currentPdfPath
+    state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       isExtractingText: true,
       extractProgress: 0.0,
     );
 
     try {
+      AppLogger.i('Calling extractTextFromPdf...');
       double progress = 0.0;
       final text = await _aiService!.extractTextFromPdf(
         filePath,
         onProgress: (current, total) {
           progress = total > 0 ? current / total : 0.0;
+          if ((progress * 100).toInt() % 10 == 0) { // Log every 10%
+            AppLogger.d('Extraction progress: $current/$total (${(progress * 100).toStringAsFixed(0)}%)');
+          }
           state = PdfChatState.visible(
+            currentPdfPath: state.currentPdfPath,
             isExtractingText: true,
             extractProgress: progress,
           );
         },
       );
 
+      AppLogger.i('✅ Extraction complete: ${text.length} chars extracted');
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         extractedText: text,
         extractProgress: 1.0,
       );
 
-      AppLogger.i('PDF text extraction complete: ${text.length} chars');
+      AppLogger.i('State updated with extracted text');
     } catch (e, stackTrace) {
-      AppLogger.e('Failed to extract PDF text', e, stackTrace);
+      AppLogger.e('❌ Failed to extract PDF text', e, stackTrace);
       state = PdfChatState.visible(
-        error: 'Failed to extract text from PDF. Please try again.',
+        currentPdfPath: state.currentPdfPath,
+        error: 'Failed to extract text from PDF: ${e.toString()}',
       );
     }
   }
@@ -103,9 +314,15 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     // Ensure we have extracted text
     if (state.extractedText == null && !state.isExtractingText) {
       // Need to extract text first
-      if (_currentPdfPath != null) {
-        await extractPdfText(_currentPdfPath!);
+      final currentPath = state.currentPdfPath;
+      if (currentPath != null) {
+        await extractPdfText(currentPath);
       }
+    }
+
+    // Ensure we have a session
+    if (_currentSessionId == null) {
+      await _getOrCreateSession();
     }
 
     // Add user message
@@ -113,10 +330,14 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final updatedMessages = [...state.messages, userMessage];
 
     state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
       isLoading: true,
       extractedText: state.extractedText,
     );
+
+    // Save user message to database
+    await _saveMessage(userMessage);
 
     try {
       final textToUse = state.extractedText ?? '';
@@ -132,14 +353,22 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
       final aiMessage = ChatMessage.ai(response);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: [...updatedMessages, aiMessage],
         extractedText: state.extractedText,
       );
+
+      // Save AI message to database
+      await _saveMessage(aiMessage);
+
+      // Update session metadata
+      await _updateSessionMetadata();
 
       AppLogger.i('Chat message sent and response received');
     } catch (e, stackTrace) {
       AppLogger.e('Failed to send chat message', e, stackTrace);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: updatedMessages,
         error: 'Failed to get response. Please try again.',
         extractedText: state.extractedText,
@@ -149,47 +378,102 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
   /// Generate a quick summary of the PDF
   Future<void> generateSummary() async {
-    if (!state.isVisible || _aiService == null) {
+    AppLogger.i('=== generateSummary called ===');
+    AppLogger.i('Current PDF path from state: ${state.currentPdfPath}');
+    AppLogger.i('Has extracted text: ${state.extractedText != null}');
+    AppLogger.i('Has AI Service: ${_aiService != null}');
+
+    if (_aiService == null) {
+      AppLogger.w('❌ AI Service not available');
+      state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
+        messages: state.messages,
+        extractedText: state.extractedText,
+        error: 'AI Service not initialized. Please try again.',
+      );
+      return;
+    }
+
+    final currentPath = state.currentPdfPath;
+    if (currentPath == null) {
+      AppLogger.w('❌ PDF not initialized');
+      state = const PdfChatState.visible(
+        error: 'PDF document not loaded. Please reopen the document.',
+      );
       return;
     }
 
     // Ensure we have extracted text
     if (state.extractedText == null && !state.isExtractingText) {
-      if (_currentPdfPath != null) {
-        await extractPdfText(_currentPdfPath!);
-      }
+      AppLogger.i('No extracted text, starting extraction...');
+      await extractPdfText(currentPath);
+      // Wait for extraction to complete
+      AppLogger.i('Extraction finished, checking state...');
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Check again if we have text
+    if (state.extractedText == null) {
+      AppLogger.w('❌ Still no extracted text after extraction attempt');
+      state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
+        messages: state.messages,
+        error: 'Failed to extract PDF text. Please try again.',
+      );
+      return;
     }
 
     // Add a system message showing we're generating summary
     final summaryRequestMessage = ChatMessage.user('Generate a summary of this document');
     final updatedMessages = [...state.messages, summaryRequestMessage];
 
+    AppLogger.i('Setting loading state...');
     state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
       isLoading: true,
       extractedText: state.extractedText,
     );
 
+    // Ensure we have a session
+    if (_currentSessionId == null) {
+      await _getOrCreateSession();
+    }
+
+    // Save summary request message
+    await _saveMessage(summaryRequestMessage);
+
     try {
       final textToUse = state.extractedText ?? '';
+      AppLogger.i('Text length for summary: ${textToUse.length} chars');
+
       if (textToUse.isEmpty) {
+        AppLogger.e('Text is empty, cannot generate summary');
         throw Exception('No PDF content available for summary');
       }
 
+      AppLogger.i('Calling AI service generateSummary...');
       final summary = await _aiService!.generateSummary(textToUse);
+      AppLogger.i('✅ Summary received, length: ${summary.length} chars');
 
       final aiMessage = ChatMessage.ai(summary);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: [...updatedMessages, aiMessage],
         extractedText: state.extractedText,
       );
 
-      AppLogger.i('Summary generated successfully');
+      // Save AI response
+      await _saveMessage(aiMessage);
+      await _updateSessionMetadata();
+
+      AppLogger.i('✅✅✅ SUMMARY GENERATED SUCCESSFULLY! ✅✅✅');
     } catch (e, stackTrace) {
-      AppLogger.e('Failed to generate summary', e, stackTrace);
+      AppLogger.e('❌ Failed to generate summary', e, stackTrace);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: updatedMessages,
-        error: 'Failed to generate summary. Please try again.',
+        error: 'Failed to generate summary: ${e.toString()}',
         extractedText: state.extractedText,
       );
     }
@@ -203,8 +487,9 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
     // Ensure we have extracted text
     if (state.extractedText == null && !state.isExtractingText) {
-      if (_currentPdfPath != null) {
-        await extractPdfText(_currentPdfPath!);
+      final currentPath = state.currentPdfPath;
+      if (currentPath != null) {
+        await extractPdfText(currentPath);
       }
     }
 
@@ -212,10 +497,19 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final updatedMessages = [...state.messages, keyPointsMessage];
 
     state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
       isLoading: true,
       extractedText: state.extractedText,
     );
+
+    // Ensure we have a session
+    if (_currentSessionId == null) {
+      await _getOrCreateSession();
+    }
+
+    // Save key points request message
+    await _saveMessage(keyPointsMessage);
 
     try {
       final textToUse = state.extractedText ?? '';
@@ -230,14 +524,20 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
       final aiMessage = ChatMessage.ai(keyPoints);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: [...updatedMessages, aiMessage],
         extractedText: state.extractedText,
       );
+
+      // Save AI response
+      await _saveMessage(aiMessage);
+      await _updateSessionMetadata();
 
       AppLogger.i('Key points extracted successfully');
     } catch (e, stackTrace) {
       AppLogger.e('Failed to extract key points', e, stackTrace);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: updatedMessages,
         error: 'Failed to extract key points. Please try again.',
         extractedText: state.extractedText,
@@ -253,8 +553,9 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
     // Ensure we have extracted text
     if (state.extractedText == null && !state.isExtractingText) {
-      if (_currentPdfPath != null) {
-        await extractPdfText(_currentPdfPath!);
+      final currentPath = state.currentPdfPath;
+      if (currentPath != null) {
+        await extractPdfText(currentPath);
       }
     }
 
@@ -262,10 +563,19 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final updatedMessages = [...state.messages, customMessage];
 
     state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
       isLoading: true,
       extractedText: state.extractedText,
     );
+
+    // Ensure we have a session
+    if (_currentSessionId == null) {
+      await _getOrCreateSession();
+    }
+
+    // Save custom data request message
+    await _saveMessage(customMessage);
 
     try {
       final textToUse = state.extractedText ?? '';
@@ -277,14 +587,20 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
       final aiMessage = ChatMessage.ai(result);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: [...updatedMessages, aiMessage],
         extractedText: state.extractedText,
       );
+
+      // Save AI response
+      await _saveMessage(aiMessage);
+      await _updateSessionMetadata();
 
       AppLogger.i('Custom data extracted successfully');
     } catch (e, stackTrace) {
       AppLogger.e('Failed to extract custom data', e, stackTrace);
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: updatedMessages,
         error: 'Failed to extract data. Please try again.',
         extractedText: state.extractedText,
@@ -296,7 +612,9 @@ class PdfChatNotifier extends _$PdfChatNotifier {
   void clearChat() {
     if (!state.isVisible) return;
 
-    state = const PdfChatState.visible();
+    state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
+    );
   }
 
   /// Dismiss any error message
@@ -304,6 +622,7 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     if (!state.isVisible) return;
 
     state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
       messages: state.messages,
       extractedText: state.extractedText,
     );
@@ -324,12 +643,26 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       }
 
       state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
         messages: messagesToKeep,
         extractedText: state.extractedText,
       );
 
       await sendMessage(lastUserMessage.content);
     }
+  }
+
+  /// Clear cached PDF path for a specific PDF
+  void clearPdfPathCache(String pdfId) {
+    _pdfPathCache.remove(pdfId);
+    AppLogger.i('Cleared PDF path cache for $pdfId');
+  }
+
+  /// Clear all cached PDF paths (use sparingly)
+  void clearAllPdfPathCache() {
+    final count = _pdfPathCache.length;
+    _pdfPathCache.clear();
+    AppLogger.i('Cleared all $count cached PDF paths');
   }
 }
 

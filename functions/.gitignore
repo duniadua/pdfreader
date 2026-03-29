@@ -1,0 +1,27 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+lib/
+
+# Firebase
+.firebase/
+firebase-debug.log*
+.firebaserc
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Secret Manager backup files (may contain encrypted secrets)
+*.secret.local
+
+# Coverage
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db

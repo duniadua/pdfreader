@@ -64,6 +64,13 @@ unlinked_spec.ds
 **/google-services-old.json
 **/android/app/google-services.json
 **/ios/Runner/GoogleService-Info.plist
+**/.firebaserc
+**/firebase-debug.log*
+**/.env
+**/.env.local
+**/.env.*.local
+**/functions/.firebase/
+**/functions/firebase-debug.log*
 
 # iOS/XCode related
 **/ios/**/*.mode1v3
@@ -129,3 +136,6 @@ app.*.symbols
 # Other projects (not part of PDF reader)
 notifme/
 testspecify/
+
+# Migration plans (sensitive information)
+MIGRATION_PLAN_GOOGLE_AI.md

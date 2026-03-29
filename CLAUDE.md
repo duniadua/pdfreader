@@ -265,6 +265,91 @@ The `stitch/` directory contains HTML prototypes used as design reference:
 
 Open `stitch/*/code.html` in a browser to view the design prototypes.
 
+## Debugging
+
+When debugging state-related issues, always check for duplicate function calls, especially in constructor or builder methods (e.g., PdfChatNotifier.build() being called twice). This pattern appears frequently in Flutter/Riverpod applications where providers may be initialized multiple times due to widget rebuilds, hot reload, or incorrect provider scoping.
+
+**Common symptoms**:
+- State resets unexpectedly
+- Data disappears on rebuild
+- Initial state reappears after navigation
+
+**Debugging steps**:
+1. Search for all instances of `.build()` methods in notifiers/providers
+2. Check component lifecycle timing (initState, dispose, mount/unmount)
+3. Add logging at state mutation points to trace execution flow
+4. Verify providers aren't being recreated on every rebuild
+
+## Feature Development
+
+For AI/ML feature integration (Firebase Genkit, PDF chat, etc.), always create a comprehensive implementation plan before writing code. Complex features require careful planning to avoid incomplete implementations and technical debt.
+
+**Planning checklist**:
+- Define clear success criteria and acceptance tests
+- Identify all dependencies and their versions
+- Map data flow and component hierarchy
+- Plan error handling for edge cases
+- Consider performance implications (e.g., PDF processing, API calls)
+
+**Example plan structure**:
+1. Overview and requirements
+2. Technical architecture
+3. File structure changes
+4. Component hierarchy and data flow
+5. Error handling and edge cases
+6. Testing approach
+7. Implementation phases
+
+## Code Quality
+
+Always verify Dart code with the analyzer before considering edits complete to catch analyzer errors early. This prevents the cycle of: implement → discover errors → fix → rediscover more errors.
+
+**Verification workflow**:
+1. Run `flutter analyze` after code changes
+2. Fix all analyzer warnings and errors
+3. Run `dart format .` for consistent formatting
+4. Run `flutter test` to ensure tests still pass
+5. Only then mark the task as complete
+
+**A PostToolUse hook is configured** to automatically run `flutter analyze` after Edit operations, providing immediate feedback on code quality issues.
+
+## Firebase & Cloud Functions Debugging
+
+For debugging Firebase-related issues (AI chat, Genkit functions, authentication), use the Firebase CLI directly in Claude sessions via the Bash tool.
+
+**Common debugging commands**:
+```bash
+# Check Firebase project status
+firebase projects:list
+
+# View recent function logs
+firebase functions:log --only <function_name>
+
+# View all function logs (useful for state debugging)
+firebase functions:log
+
+# Check Firestore indexes
+firebase firestore:indexes list
+
+# View Firestore data (for debugging state persistence)
+firebase firestore:get <collection>/<document_id>
+
+# Export Firestore data (for state analysis)
+firestore export <collection_name>
+```
+
+**Debugging AI chat state issues**:
+1. Check function logs for errors: `firebase functions:log`
+2. Verify Firestore documents exist: `firebase firestore:get chatSessions/<session_id>`
+3. Check for rate limiting or quota issues
+4. Review function execution time in Firebase Console
+
+**Common patterns**:
+- State reset → Check if Firestore documents are being overwritten
+- Missing chat responses → Check function logs for Genkit API errors
+- Authentication failures → Check Firebase Auth logs
+- Performance issues → Review cold starts and function execution times
+
 ---
 
 ## Dart/Flutter Code Style Guidelines

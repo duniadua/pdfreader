@@ -3,5 +3,19 @@
     "allow": [
       "Webfetch, ls, mkdir, rm"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "flutter analyze --fatal-infos 2>&1 | head -20 || echo '⚠️  Analyzer issues detected'",
+            "statusMessage": "Checking for Dart analyzer issues..."
+          }
+        ]
+      }
+    ]
   }
 }

@@ -9,11 +9,7 @@ void main() {
   group('LibraryScreen Widget Tests', () {
     testWidgets('should render without errors', (WidgetTester tester) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: const MaterialApp(
-            home: LibraryScreen(),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: LibraryScreen())),
       );
 
       // Just check it doesn't crash
@@ -47,10 +43,7 @@ void main() {
         ),
       ];
 
-      final updated = initial.copyWith(
-        allPdfs: pdfs,
-        isLoading: false,
-      );
+      final updated = initial.copyWith(allPdfs: pdfs, isLoading: false);
 
       expect(updated.allPdfs, pdfs);
       expect(updated.isLoading, false);

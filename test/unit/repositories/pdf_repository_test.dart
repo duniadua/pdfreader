@@ -41,7 +41,7 @@ void main() {
         'thumbnailPath': null,
         'isFavorite': false,
         'progress': null,
-      }
+      },
     ]);
 
     group('getAllPdfs', () {

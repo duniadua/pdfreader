@@ -10,6 +10,7 @@ import 'core/cache/cache_manager.dart';
 import 'core/data/providers/repository_providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/pdf_intent_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
 import 'features/settings/presentation/providers/settings_notifier.dart';
@@ -69,9 +70,7 @@ void main() async {
         // Override the SharedPreferences provider with the pre-initialized value
         sharedPreferencesProvider.overrideWith((ref) => prefs),
       ],
-      observers: [
-        _ProviderLogger(),
-      ],
+      observers: [_ProviderLogger()],
       child: const PdfReaderApp(),
     ),
   );
@@ -81,11 +80,51 @@ void main() async {
   await cacheManager.dispose();
 }
 
-class PdfReaderApp extends ConsumerWidget {
+class PdfReaderApp extends ConsumerStatefulWidget {
   const PdfReaderApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PdfReaderApp> createState() => _PdfReaderAppState();
+}
+
+class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Check for pending PDF intent after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingPdfIntent(ref);
+    });
+  }
+
+  Future<void> _checkPendingPdfIntent(WidgetRef ref) async {
+    final intentHandler = ref.read(pdfIntentHandlerProvider);
+    final filePath = intentHandler.getPendingFilePath();
+
+    if (filePath != null) {
+      AppLogger.i('Processing pending PDF intent: $filePath');
+
+      if (mounted) {
+        // Show loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Importing PDF...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Import PDF and navigate to reader
+        await intentHandler.handlePdfIntent(filePath, (pdfId) {
+          if (mounted) {
+            ref.read(routerProvider).go('${AppRoutes.reader}?pdfId=$pdfId');
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final settingsState = ref.watch(settingsNotifierProvider);
     final settings = settingsState.settings;

@@ -36,7 +36,8 @@ PdfRepository sharedPreferencesPdfRepository(Ref ref) {
       thumbnailService: thumbnailService,
     ),
     loading: () => throw UnimplementedError('SharedPreferences not ready'),
-    error: (error, stackTrace) => throw UnimplementedError('Failed to load SharedPreferences'),
+    error: (error, stackTrace) =>
+        throw UnimplementedError('Failed to load SharedPreferences'),
   );
 }
 
@@ -47,6 +48,7 @@ SettingsRepository settingsRepository(Ref ref) {
   return prefsAsync.when(
     data: (prefs) => SharedPreferencesSettingsRepository(prefs: prefs),
     loading: () => throw Exception('SharedPreferences not ready'),
-    error: (error, stackTrace) => throw Exception('Failed to load SharedPreferences'),
+    error: (error, stackTrace) =>
+        throw Exception('Failed to load SharedPreferences'),
   );
 }

@@ -35,8 +35,9 @@ void main() {
     group('initial state', () {
       test('should start in loading state', () {
         // Given
-        when(mockRepo.getPdfById('test-id'))
-            .thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.getPdfById('test-id'),
+        ).thenAnswer((_) async => Result.success(testPdf));
 
         final container = ProviderContainer(
           overrides: [
@@ -46,7 +47,9 @@ void main() {
 
         // When
         container.read(pdfReaderNotifierProvider('test-id').notifier);
-        final initialState = container.read(pdfReaderNotifierProvider('test-id'));
+        final initialState = container.read(
+          pdfReaderNotifierProvider('test-id'),
+        );
 
         // Then - initial state should be loading
         expect(initialState, const PdfReaderState.loading());
@@ -58,8 +61,9 @@ void main() {
     group('loadPdf - success', () {
       test('should load PDF successfully when file exists', () async {
         // Given
-        when(mockRepo.getPdfById('test-pdf-1'))
-            .thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.getPdfById('test-pdf-1'),
+        ).thenAnswer((_) async => Result.success(testPdf));
 
         final container = ProviderContainer(
           overrides: [
@@ -87,8 +91,9 @@ void main() {
 
       test('should return notFound when PDF does not exist', () async {
         // Given
-        when(mockRepo.getPdfById('non-existent'))
-            .thenAnswer((_) async => Result.success(null));
+        when(
+          mockRepo.getPdfById('non-existent'),
+        ).thenAnswer((_) async => Result.success(null));
 
         final container = ProviderContainer(
           overrides: [
@@ -111,8 +116,9 @@ void main() {
       test('should return fileNotFound when file is deleted', () async {
         // Given
         final deletedPdf = testPdf.copyWith(filePath: '/deleted/file.pdf');
-        when(mockRepo.getPdfById('deleted-pdf'))
-            .thenAnswer((_) async => Result.success(deletedPdf));
+        when(
+          mockRepo.getPdfById('deleted-pdf'),
+        ).thenAnswer((_) async => Result.success(deletedPdf));
 
         final container = ProviderContainer(
           overrides: [
@@ -138,8 +144,9 @@ void main() {
     group('loadPdf - failure', () {
       test('should return error state when repository fails', () async {
         // Given
-        when(mockRepo.getPdfById('error-pdf'))
-            .thenAnswer((_) async => Result.failure(const StorageException('Database error')));
+        when(mockRepo.getPdfById('error-pdf')).thenAnswer(
+          (_) async => Result.failure(const StorageException('Database error')),
+        );
 
         final container = ProviderContainer(
           overrides: [
@@ -165,10 +172,12 @@ void main() {
     group('onPageChanged', () {
       test('should update progress when page changes', () async {
         // Given
-        when(mockRepo.getPdfById('test-pdf-1'))
-            .thenAnswer((_) async => Result.success(testPdf));
-        when(mockRepo.updateProgress('test-pdf-1', 5, 0))
-            .thenAnswer((_) async => Result.success(null));
+        when(
+          mockRepo.getPdfById('test-pdf-1'),
+        ).thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.updateProgress('test-pdf-1', 5, 0),
+        ).thenAnswer((_) async => Result.success(null));
 
         final container = ProviderContainer(
           overrides: [
@@ -181,7 +190,9 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 300));
 
         // When - trigger page change
-        container.read(pdfReaderNotifierProvider('test-pdf-1').notifier).onPageChanged(5);
+        container
+            .read(pdfReaderNotifierProvider('test-pdf-1').notifier)
+            .onPageChanged(5);
 
         verify(mockRepo.updateProgress('test-pdf-1', 5, 0)).called(1);
         container.dispose();
@@ -192,10 +203,12 @@ void main() {
       test('should toggle favorite status successfully', () async {
         // Given
         final favoritePdf = testPdf.copyWith(isFavorite: true);
-        when(mockRepo.getPdfById('test-pdf-1'))
-            .thenAnswer((_) async => Result.success(testPdf));
-        when(mockRepo.toggleFavorite('test-pdf-1'))
-            .thenAnswer((_) async => Result.success(favoritePdf));
+        when(
+          mockRepo.getPdfById('test-pdf-1'),
+        ).thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.toggleFavorite('test-pdf-1'),
+        ).thenAnswer((_) async => Result.success(favoritePdf));
 
         final container = ProviderContainer(
           overrides: [
@@ -208,7 +221,9 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 300));
 
         // When - toggle favorite
-        await container.read(pdfReaderNotifierProvider('test-pdf-1').notifier).toggleFavorite();
+        await container
+            .read(pdfReaderNotifierProvider('test-pdf-1').notifier)
+            .toggleFavorite();
         await Future.delayed(const Duration(milliseconds: 300));
 
         final state = container.read(pdfReaderNotifierProvider('test-pdf-1'));
@@ -225,8 +240,10 @@ void main() {
     group('retry', () {
       test('should retry loading PDF', () async {
         // Given - first call fails
-        when(mockRepo.getPdfById('retry-pdf'))
-            .thenAnswer((_) async => Result.failure(const StorageException('Temporary error')));
+        when(mockRepo.getPdfById('retry-pdf')).thenAnswer(
+          (_) async =>
+              Result.failure(const StorageException('Temporary error')),
+        );
 
         final container = ProviderContainer(
           overrides: [
@@ -242,8 +259,9 @@ void main() {
         expect(state, isA<PdfReaderState>());
 
         // Given - second call succeeds
-        when(mockRepo.getPdfById('retry-pdf'))
-            .thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.getPdfById('retry-pdf'),
+        ).thenAnswer((_) async => Result.success(testPdf));
 
         // When - retry
         container.read(pdfReaderNotifierProvider('retry-pdf').notifier).retry();
@@ -263,8 +281,9 @@ void main() {
     group('state transitions', () {
       test('should transition from loading to loaded', () async {
         // Given
-        when(mockRepo.getPdfById('test-pdf-1'))
-            .thenAnswer((_) async => Result.success(testPdf));
+        when(
+          mockRepo.getPdfById('test-pdf-1'),
+        ).thenAnswer((_) async => Result.success(testPdf));
 
         final container = ProviderContainer(
           overrides: [
@@ -276,7 +295,10 @@ void main() {
         container.read(pdfReaderNotifierProvider('test-pdf-1').notifier);
 
         // Initial state
-        expect(container.read(pdfReaderNotifierProvider('test-pdf-1')), const PdfReaderState.loading());
+        expect(
+          container.read(pdfReaderNotifierProvider('test-pdf-1')),
+          const PdfReaderState.loading(),
+        );
 
         // Wait for load
         await Future.delayed(const Duration(milliseconds: 300));

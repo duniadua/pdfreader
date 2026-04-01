@@ -66,7 +66,9 @@ class ThumbnailService {
           return thumbnailPath;
         } else {
           // Delete empty file and regenerate
-          AppLogger.w('Cached thumbnail is empty, regenerating: $thumbnailPath');
+          AppLogger.w(
+            'Cached thumbnail is empty, regenerating: $thumbnailPath',
+          );
           await _logThumbnailEvent('thumbnail_cache_empty', {
             'pdf_name': pdfFileName,
             'thumbnail_path': thumbnailPath,
@@ -146,7 +148,9 @@ class ThumbnailService {
       if (await thumbnailFile.exists()) {
         final fileSize = await thumbnailFile.length();
         stopwatch.stop();
-        AppLogger.i('Thumbnail generated successfully: $thumbnailPath ($fileSize bytes)');
+        AppLogger.i(
+          'Thumbnail generated successfully: $thumbnailPath ($fileSize bytes)',
+        );
         await _logThumbnailEvent('thumbnail_generated', {
           'pdf_name': pdfFileName,
           'thumbnail_path': thumbnailPath,
@@ -181,7 +185,10 @@ class ThumbnailService {
   }
 
   /// Log thumbnail event to Crashlytics (only in release mode)
-  Future<void> _logThumbnailEvent(String eventName, Map<String, dynamic> data) async {
+  Future<void> _logThumbnailEvent(
+    String eventName,
+    Map<String, dynamic> data,
+  ) async {
     if (kReleaseMode) {
       try {
         final crashlytics = FirebaseCrashlytics.instance;

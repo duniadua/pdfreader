@@ -19,17 +19,17 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$DriveResult<T> {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(T data) success,
+    required TResult Function(T data, bool isFromCache) success,
     required TResult Function(DriveFailure failure) failure,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(T data)? success,
+    TResult? Function(T data, bool isFromCache)? success,
     TResult? Function(DriveFailure failure)? failure,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(T data)? success,
+    TResult Function(T data, bool isFromCache)? success,
     TResult Function(DriveFailure failure)? failure,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
@@ -80,7 +80,7 @@ abstract class _$$DriveSuccessImplCopyWith<T, $Res> {
     $Res Function(_$DriveSuccessImpl<T>) then,
   ) = __$$DriveSuccessImplCopyWithImpl<T, $Res>;
   @useResult
-  $Res call({T data});
+  $Res call({T data, bool isFromCache});
 }
 
 /// @nodoc
@@ -96,13 +96,17 @@ class __$$DriveSuccessImplCopyWithImpl<T, $Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? data = freezed}) {
+  $Res call({Object? data = freezed, Object? isFromCache = null}) {
     return _then(
       _$DriveSuccessImpl<T>(
         freezed == data
             ? _value.data
             : data // ignore: cast_nullable_to_non_nullable
                   as T,
+        isFromCache: null == isFromCache
+            ? _value.isFromCache
+            : isFromCache // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -111,14 +115,19 @@ class __$$DriveSuccessImplCopyWithImpl<T, $Res>
 /// @nodoc
 
 class _$DriveSuccessImpl<T> implements DriveSuccess<T> {
-  const _$DriveSuccessImpl(this.data);
+  const _$DriveSuccessImpl(this.data, {this.isFromCache = false});
 
   @override
   final T data;
 
+  /// Indicates if the data is from cache
+  @override
+  @JsonKey()
+  final bool isFromCache;
+
   @override
   String toString() {
-    return 'DriveResult<$T>.success(data: $data)';
+    return 'DriveResult<$T>.success(data: $data, isFromCache: $isFromCache)';
   }
 
   @override
@@ -126,12 +135,17 @@ class _$DriveSuccessImpl<T> implements DriveSuccess<T> {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DriveSuccessImpl<T> &&
-            const DeepCollectionEquality().equals(other.data, data));
+            const DeepCollectionEquality().equals(other.data, data) &&
+            (identical(other.isFromCache, isFromCache) ||
+                other.isFromCache == isFromCache));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(data));
+  int get hashCode => Object.hash(
+    runtimeType,
+    const DeepCollectionEquality().hash(data),
+    isFromCache,
+  );
 
   /// Create a copy of DriveResult
   /// with the given fields replaced by the non-null parameter values.
@@ -147,30 +161,30 @@ class _$DriveSuccessImpl<T> implements DriveSuccess<T> {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(T data) success,
+    required TResult Function(T data, bool isFromCache) success,
     required TResult Function(DriveFailure failure) failure,
   }) {
-    return success(data);
+    return success(data, isFromCache);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(T data)? success,
+    TResult? Function(T data, bool isFromCache)? success,
     TResult? Function(DriveFailure failure)? failure,
   }) {
-    return success?.call(data);
+    return success?.call(data, isFromCache);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(T data)? success,
+    TResult Function(T data, bool isFromCache)? success,
     TResult Function(DriveFailure failure)? failure,
     required TResult orElse(),
   }) {
     if (success != null) {
-      return success(data);
+      return success(data, isFromCache);
     }
     return orElse();
   }
@@ -208,9 +222,13 @@ class _$DriveSuccessImpl<T> implements DriveSuccess<T> {
 }
 
 abstract class DriveSuccess<T> implements DriveResult<T> {
-  const factory DriveSuccess(final T data) = _$DriveSuccessImpl<T>;
+  const factory DriveSuccess(final T data, {final bool isFromCache}) =
+      _$DriveSuccessImpl<T>;
 
   T get data;
+
+  /// Indicates if the data is from cache
+  bool get isFromCache;
 
   /// Create a copy of DriveResult
   /// with the given fields replaced by the non-null parameter values.
@@ -305,7 +323,7 @@ class _$DriveFailureResultImpl<T> implements DriveFailureResult<T> {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(T data) success,
+    required TResult Function(T data, bool isFromCache) success,
     required TResult Function(DriveFailure failure) failure,
   }) {
     return failure(this.failure);
@@ -314,7 +332,7 @@ class _$DriveFailureResultImpl<T> implements DriveFailureResult<T> {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(T data)? success,
+    TResult? Function(T data, bool isFromCache)? success,
     TResult? Function(DriveFailure failure)? failure,
   }) {
     return failure?.call(this.failure);
@@ -323,7 +341,7 @@ class _$DriveFailureResultImpl<T> implements DriveFailureResult<T> {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(T data)? success,
+    TResult Function(T data, bool isFromCache)? success,
     TResult Function(DriveFailure failure)? failure,
     required TResult orElse(),
   }) {

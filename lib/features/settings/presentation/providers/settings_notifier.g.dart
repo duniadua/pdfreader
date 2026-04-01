@@ -6,25 +6,6 @@ part of 'settings_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appSettingsHash() => r'fdd0974307fd5e29745af976f21ac7a528b1b5b1';
-
-/// Simplified provider for just app settings (for theme selection)
-///
-/// Copied from [appSettings].
-@ProviderFor(appSettings)
-final appSettingsProvider = AutoDisposeFutureProvider<AppSettings>.internal(
-  appSettings,
-  name: r'appSettingsProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$appSettingsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AppSettingsRef = AutoDisposeFutureProviderRef<AppSettings>;
 String _$settingsNotifierHash() => r'a21eaa7c0f3e7de77e173d7707e327b0e71fd53e';
 
 /// Settings state notifier

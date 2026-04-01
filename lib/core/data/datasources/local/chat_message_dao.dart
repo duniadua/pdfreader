@@ -98,9 +98,7 @@ class ChatMessageDao {
     required bool isProcessing,
     String? error,
   }) async {
-    final values = <String, dynamic>{
-      'is_processing': isProcessing ? 1 : 0,
-    };
+    final values = <String, dynamic>{'is_processing': isProcessing ? 1 : 0};
     if (error != null) {
       values['error'] = error;
     }

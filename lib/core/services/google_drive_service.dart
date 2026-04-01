@@ -145,14 +145,18 @@ class GoogleDriveService {
       final files = response.files ?? [];
       AppLogger.i('Found ${files.length} PDF files in Drive');
 
-      return files.map((file) => DriveFile(
-        id: file.id ?? '',
-        name: file.name ?? 'Unknown',
-        size: int.tryParse(file.size ?? '0') ?? 0,
-        createdTime: file.createdTime ?? DateTime.now(),
-        thumbnailLink: file.thumbnailLink,
-        webViewLink: file.webViewLink,
-      )).toList();
+      return files
+          .map(
+            (file) => DriveFile(
+              id: file.id ?? '',
+              name: file.name ?? 'Unknown',
+              size: int.tryParse(file.size ?? '0') ?? 0,
+              createdTime: file.createdTime ?? DateTime.now(),
+              thumbnailLink: file.thumbnailLink,
+              webViewLink: file.webViewLink,
+            ),
+          )
+          .toList();
     } catch (e, st) {
       AppLogger.e('Failed to list Drive files', e, st);
       return [];
@@ -252,10 +256,7 @@ class _AuthenticatedClient extends http.BaseClient {
   final String accessToken;
   final http.Client baseClient;
 
-  _AuthenticatedClient({
-    required this.accessToken,
-    required this.baseClient,
-  });
+  _AuthenticatedClient({required this.accessToken, required this.baseClient});
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {

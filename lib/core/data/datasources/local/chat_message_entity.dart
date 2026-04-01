@@ -96,8 +96,10 @@ class ChatMessageEntity {
   }
 
   /// Convert timestamp to DateTime
-  DateTime get timestampDateTime => DateTime.fromMillisecondsSinceEpoch(timestamp);
+  DateTime get timestampDateTime =>
+      DateTime.fromMillisecondsSinceEpoch(timestamp);
 
   /// Convert createdAt to DateTime
-  DateTime get createdAtDateTime => DateTime.fromMillisecondsSinceEpoch(createdAt);
+  DateTime get createdAtDateTime =>
+      DateTime.fromMillisecondsSinceEpoch(createdAt);
 }

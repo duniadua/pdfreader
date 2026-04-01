@@ -8,7 +8,8 @@ class Result<T> with _$Result<T> {
   const Result._();
 
   const factory Result.success(T data) = Success;
-  const factory Result.failure(Object error, [StackTrace? stackTrace]) = Failure;
+  const factory Result.failure(Object error, [StackTrace? stackTrace]) =
+      Failure;
 }
 
 /// Extension on Result for additional utility methods
@@ -49,7 +50,9 @@ extension ResultExtension<T> on Result<T> {
   }
 
   /// Async transform
-  Future<Result<R>> mapDataAsync<R>(Future<R> Function(T data) transform) async {
+  Future<Result<R>> mapDataAsync<R>(
+    Future<R> Function(T data) transform,
+  ) async {
     return when(
       success: (data) async {
         try {
@@ -75,7 +78,9 @@ extension ResultExtension<T> on Result<T> {
   }
 
   /// Execute a callback on failure
-  Result<T> onFailure(void Function(Object error, StackTrace? stackTrace) callback) {
+  Result<T> onFailure(
+    void Function(Object error, StackTrace? stackTrace) callback,
+  ) {
     return when(
       success: (data) => Result.success(data),
       failure: (error, stackTrace) {

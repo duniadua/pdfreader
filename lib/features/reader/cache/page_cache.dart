@@ -63,8 +63,8 @@ class PdfPageCache {
   PdfPageCache({
     required this.pdfId,
     int maxCachedPages = CacheConfig.pagesPerPdf,
-  })  : _maxCachedPages = maxCachedPages,
-        _cache = {};
+  }) : _maxCachedPages = maxCachedPages,
+       _cache = {};
 
   final String pdfId;
   final int _maxCachedPages;
@@ -78,7 +78,11 @@ class PdfPageCache {
 
   /// Get a cached page
   Uint8List? getPage(int pageNumber, {double scale = 1.0}) {
-    final key = PageCacheKey(pdfId: pdfId, pageNumber: pageNumber, scale: scale);
+    final key = PageCacheKey(
+      pdfId: pdfId,
+      pageNumber: pageNumber,
+      scale: scale,
+    );
     final entry = _cache[key];
 
     if (entry != null) {
@@ -100,7 +104,11 @@ class PdfPageCache {
 
   /// Put a page into cache
   void putPage(int pageNumber, Uint8List imageData, {double scale = 1.0}) {
-    final key = PageCacheKey(pdfId: pdfId, pageNumber: pageNumber, scale: scale);
+    final key = PageCacheKey(
+      pdfId: pdfId,
+      pageNumber: pageNumber,
+      scale: scale,
+    );
     final entry = PageCacheEntry(
       imageData: imageData,
       cachedAt: DateTime.now(),
@@ -119,7 +127,9 @@ class PdfPageCache {
     _totalSize += entry.size;
 
     if (kDebugMode) {
-      AppLogger.d('Cached: $key (${entry.size} bytes, ${_cache.length} items, ${(_totalSize / 1024 / 1024).toStringAsFixed(1)}MB)');
+      AppLogger.d(
+        'Cached: $key (${entry.size} bytes, ${_cache.length} items, ${(_totalSize / 1024 / 1024).toStringAsFixed(1)}MB)',
+      );
     }
   }
 
@@ -131,7 +141,11 @@ class PdfPageCache {
     _currentPage = currentPage;
     final pagesToPreload = <int>[];
 
-    for (int i = -CacheConfig.preloadRange; i <= CacheConfig.preloadRange; i++) {
+    for (
+      int i = -CacheConfig.preloadRange;
+      i <= CacheConfig.preloadRange;
+      i++
+    ) {
       final page = currentPage + i;
       if (page > 0 && page <= totalPages && page != currentPage) {
         // Only preload if not already cached
@@ -204,13 +218,13 @@ class PdfPageCache {
 
   /// Get cache statistics
   PageCacheStats get stats => PageCacheStats(
-        itemCount: _cache.length,
-        totalSizeBytes: _totalSize,
-        totalSizeMb: _totalSize / (1024 * 1024),
-        maxSizeMb: _maxSizeBytes / (1024 * 1024),
-        currentPage: _currentPage,
-        maxPages: _maxCachedPages,
-      );
+    itemCount: _cache.length,
+    totalSizeBytes: _totalSize,
+    totalSizeMb: _totalSize / (1024 * 1024),
+    maxSizeMb: _maxSizeBytes / (1024 * 1024),
+    currentPage: _currentPage,
+    maxPages: _maxCachedPages,
+  );
 
   /// Update max size bytes
   void setMaxSizeBytes(int maxSizeBytes) {

@@ -7,10 +7,7 @@ void main() {
       test('should contain data', () {
         const result = Result.success('test data');
         expect(
-          result.maybeWhen(
-            success: (data) => data,
-            orElse: () => null,
-        ),
+          result.maybeWhen(success: (data) => data, orElse: () => null),
           'test data',
         );
       });
@@ -24,25 +21,13 @@ void main() {
       test('mapData should transform data', () {
         const result = Result.success(5);
         final mapped = result.mapData((n) => n * 2);
-        expect(
-          mapped.maybeWhen(
-            success: (d) => d,
-            orElse: () => null,
-        ),
-          10,
-        );
+        expect(mapped.maybeWhen(success: (d) => d, orElse: () => null), 10);
       });
 
       test('mapDataAsync should transform data asynchronously', () async {
         const result = Result.success(5);
         final mapped = await result.mapDataAsync((n) async => n * 2);
-        expect(
-          mapped.maybeWhen(
-            success: (d) => d,
-            orElse: () => null,
-        ),
-          10,
-        );
+        expect(mapped.maybeWhen(success: (d) => d, orElse: () => null), 10);
       });
 
       test('onSuccess should execute callback', () {
@@ -62,12 +47,15 @@ void main() {
 
     group('Failure', () {
       test('should contain error', () {
-        final result = Result.failure(Exception('test error'), StackTrace.current);
+        final result = Result.failure(
+          Exception('test error'),
+          StackTrace.current,
+        );
         expect(
           result.maybeWhen(
             failure: (e, st) => e.toString(),
             orElse: () => null,
-        ),
+          ),
           'Exception: test error',
         );
       });

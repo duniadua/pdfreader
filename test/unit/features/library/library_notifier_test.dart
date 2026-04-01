@@ -32,7 +32,9 @@ void main() {
     mockRepository = MockPdfRepository();
     container = ProviderContainer(
       overrides: [
-        sharedPreferencesPdfRepositoryProvider.overrideWithValue(mockRepository),
+        sharedPreferencesPdfRepositoryProvider.overrideWithValue(
+          mockRepository,
+        ),
       ],
     );
   });
@@ -55,13 +57,18 @@ void main() {
         ),
       ];
 
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.success(createPaginated(testPdfs)));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success(testPdfs));
-      when(mockRepository.getFavoritePdfs()).thenAnswer(
-        (_) async => Result.success([]),
-      );
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.success(createPaginated(testPdfs)));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success(testPdfs));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
 
       container.read(libraryNotifierProvider.notifier);
       // Wait for the async loadLibrary (called from build) to complete
@@ -72,8 +79,12 @@ void main() {
       final state = container.read(libraryNotifierProvider);
       expect(state.isLoading, false);
       expect(state.allPdfs.length, 1);
-      verify(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .called(1);
+      verify(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).called(1);
     });
 
     test('should load PDFs from repository on init', () async {
@@ -89,13 +100,18 @@ void main() {
         ),
       ];
 
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.success(createPaginated(testPdfs)));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success(testPdfs));
-      when(mockRepository.getFavoritePdfs()).thenAnswer(
-        (_) async => Result.success([]),
-      );
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.success(createPaginated(testPdfs)));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success(testPdfs));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
 
       container.read(libraryNotifierProvider.notifier);
       // Wait for the async loadLibrary (called from build) to complete
@@ -105,17 +121,27 @@ void main() {
       final state = container.read(libraryNotifierProvider);
       expect(state.isLoading, false);
       expect(state.allPdfs.length, 1);
-      verify(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .called(1);
+      verify(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).called(1);
     });
 
     test('should set failure state when repository fails', () async {
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.failure(Exception('Failed to load')));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success([]));
-      when(mockRepository.getFavoritePdfs())
-          .thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.failure(Exception('Failed to load')));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
 
       container.read(libraryNotifierProvider.notifier);
       // Wait for the async loadLibrary (called from build) to complete
@@ -131,12 +157,18 @@ void main() {
 
   group('LibraryNotifier.toggleFavorite', () {
     test('should call repository toggleFavorite', () async {
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.success(createPaginated([])));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success([]));
-      when(mockRepository.getFavoritePdfs())
-          .thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.success(createPaginated([])));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
       when(mockRepository.toggleFavorite('test-id')).thenAnswer(
         (_) async => Result.success(
           PdfDocument(
@@ -154,7 +186,9 @@ void main() {
 
       container.read(libraryNotifierProvider.notifier);
       await container.pump();
-      await container.read(libraryNotifierProvider.notifier).toggleFavorite('test-id');
+      await container
+          .read(libraryNotifierProvider.notifier)
+          .toggleFavorite('test-id');
       await container.pump();
 
       verify(mockRepository.toggleFavorite('test-id')).called(1);
@@ -163,18 +197,27 @@ void main() {
 
   group('LibraryNotifier.deletePdf', () {
     test('should call repository deletePdf', () async {
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.success(createPaginated([])));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success([]));
-      when(mockRepository.getFavoritePdfs())
-          .thenAnswer((_) async => Result.success([]));
-      when(mockRepository.deletePdf('test-id'))
-          .thenAnswer((_) async => Result.success(null));
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.success(createPaginated([])));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.deletePdf('test-id'),
+      ).thenAnswer((_) async => Result.success(null));
 
       container.read(libraryNotifierProvider.notifier);
       await container.pump();
-      await container.read(libraryNotifierProvider.notifier).deletePdf('test-id');
+      await container
+          .read(libraryNotifierProvider.notifier)
+          .deletePdf('test-id');
       await container.pump();
 
       verify(mockRepository.deletePdf('test-id')).called(1);
@@ -183,12 +226,18 @@ void main() {
 
   group('LibraryNotifier.dismissFailure', () {
     test('should dismiss failure state', () async {
-      when(mockRepository.getPagedPdfs(offset: 0, limit: CacheConfig.initialPageSize))
-          .thenAnswer((_) async => Result.success(createPaginated([])));
-      when(mockRepository.getRecentPdfs(limit: CacheConfig.recentCount))
-          .thenAnswer((_) async => Result.success([]));
-      when(mockRepository.getFavoritePdfs())
-          .thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getPagedPdfs(
+          offset: 0,
+          limit: CacheConfig.initialPageSize,
+        ),
+      ).thenAnswer((_) async => Result.success(createPaginated([])));
+      when(
+        mockRepository.getRecentPdfs(limit: CacheConfig.recentCount),
+      ).thenAnswer((_) async => Result.success([]));
+      when(
+        mockRepository.getFavoritePdfs(),
+      ).thenAnswer((_) async => Result.success([]));
 
       final notifier = container.read(libraryNotifierProvider.notifier);
       await Future.delayed(Duration(milliseconds: 100));

@@ -20,9 +20,7 @@ void main() {
   setUp(() {
     mockRepository = MockSettingsRepository();
     container = ProviderContainer(
-      overrides: [
-        settingsRepositoryProvider.overrideWithValue(mockRepository),
-      ],
+      overrides: [settingsRepositoryProvider.overrideWithValue(mockRepository)],
     );
   });
 
@@ -45,7 +43,10 @@ void main() {
       expect(state.isLoading, false);
       expect(state.settings.darkMode, AppConstants.defaultDarkMode);
       expect(state.settings.fontSize, AppConstants.defaultFontSize);
-      expect(state.settings.scrollDirection, AppConstants.defaultScrollDirection);
+      expect(
+        state.settings.scrollDirection,
+        AppConstants.defaultScrollDirection,
+      );
       expect(state.settings.autoCropMargins, AppConstants.defaultAutoCrop);
       expect(state.settings.brightness, AppConstants.defaultBrightness);
       expect(state.failure, isNull);
@@ -61,9 +62,9 @@ void main() {
         brightness: 0.8,
       );
 
-      when(mockRepository.getSettings()).thenAnswer(
-        (_) async => result.Result.success(testSettings),
-      );
+      when(
+        mockRepository.getSettings(),
+      ).thenAnswer((_) async => result.Result.success(testSettings));
 
       // Act
       await container.pump();
@@ -110,7 +111,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setDarkMode(false);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setDarkMode(false);
       await container.pump();
 
       // Assert
@@ -132,7 +135,9 @@ void main() {
       await container.pump();
       await container.read(settingsNotifierProvider.notifier).setDarkMode(true);
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setDarkMode(false);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setDarkMode(false);
       await container.pump();
 
       // Assert
@@ -210,7 +215,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setScrollDirection(ScrollDirection.vertical);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setScrollDirection(ScrollDirection.vertical);
       await container.pump();
 
       // Assert
@@ -230,7 +237,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setScrollDirection(ScrollDirection.horizontal);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setScrollDirection(ScrollDirection.horizontal);
       await container.pump();
 
       // Assert
@@ -250,7 +259,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setAutoCropMargins(true);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setAutoCropMargins(true);
       await container.pump();
 
       // Assert
@@ -270,7 +281,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setBrightness(0.9);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setBrightness(0.9);
       await container.pump();
 
       // Assert
@@ -290,7 +303,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setBrightness(-0.5);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setBrightness(-0.5);
       await container.pump();
 
       // Assert
@@ -309,7 +324,9 @@ void main() {
 
       // Act
       await container.pump();
-      await container.read(settingsNotifierProvider.notifier).setBrightness(1.5);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .setBrightness(1.5);
       await container.pump();
 
       // Assert
@@ -351,7 +368,10 @@ void main() {
       final state = container.read(settingsNotifierProvider);
       expect(state.settings.darkMode, AppConstants.defaultDarkMode);
       expect(state.settings.fontSize, AppConstants.defaultFontSize);
-      expect(state.settings.scrollDirection, AppConstants.defaultScrollDirection);
+      expect(
+        state.settings.scrollDirection,
+        AppConstants.defaultScrollDirection,
+      );
       expect(state.settings.autoCropMargins, AppConstants.defaultAutoCrop);
       expect(state.settings.brightness, AppConstants.defaultBrightness);
       verify(mockRepository.resetToDefaults()).called(1);

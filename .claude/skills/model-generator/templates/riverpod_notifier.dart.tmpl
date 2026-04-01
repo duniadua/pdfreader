@@ -1,0 +1,15 @@
+part '{{name}}_notifier.g.dart';
+part '{{name}}_notifier.freezed.dart';
+
+@riverpod
+class {{Name}}Notifier extends _${{Name}}Notifier {
+  @override
+  {{StateType}} build() {
+    {{initialization_logic}}
+    return {{StateType}}.initial();
+  }
+
+  {{methods}}
+
+  {{state_transition_helpers}}
+}

@@ -123,7 +123,8 @@ class ChatDatabase {
     await db.close();
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, _databaseName);
-    await deleteDatabase(path);
+    // Use the fully qualified deleteDatabase function from sqflite
+    await databaseFactory.deleteDatabase(path);
     _database = null;
   }
 

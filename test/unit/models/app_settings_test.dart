@@ -89,10 +89,7 @@ void main() {
         brightness: 0.5,
       );
 
-      final updated = settings.copyWith(
-        darkMode: true,
-        fontSize: 18.0,
-      );
+      final updated = settings.copyWith(darkMode: true, fontSize: 18.0);
 
       expect(updated.darkMode, true);
       expect(updated.fontSize, 18.0);

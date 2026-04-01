@@ -1,11 +1,16 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:collection';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/services/pdf_ai_service.dart';
 import '../../../../core/data/repositories/chat_repository.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/result.dart';
 import 'pdf_chat_state.dart';
 
 // Forward declaration to avoid circular dependency
@@ -15,7 +20,7 @@ part 'pdf_chat_notifier.g.dart';
 
 /// Provider for PDF AI service
 @riverpod
-PdfAIService pdfAIService(PdfAIServiceRef ref) {
+PdfAIService pdfAIService(Ref ref) {
   return PdfAIService(
     functions: FirebaseFunctions.instanceFor(region: 'asia-southeast1'),
     auth: FirebaseAuth.instance,
@@ -25,9 +30,14 @@ PdfAIService pdfAIService(PdfAIServiceRef ref) {
 /// Provider for PDF chat state management
 @riverpod
 class PdfChatNotifier extends _$PdfChatNotifier {
-  // Static cache that persists across provider instances
-  static final Map<String, String> _pdfPathCache = {};
-  static final Map<String, PdfDocument> _pdfCache = {};
+  // Maximum cache size to prevent memory leaks
+  static const int _maxCacheSize = 20;
+
+  // Static cache that persists across provider instances with LRU eviction
+  static final LinkedHashMap<String, String> _pdfPathCache = LinkedHashMap();
+  static final LinkedHashMap<String, PdfDocument> _pdfCache = LinkedHashMap();
+  static final LinkedHashMap<String, List<ChatMessage>> _messagesCache =
+      LinkedHashMap();
 
   PdfAIService? _aiService;
   ChatRepository? _chatRepository;
@@ -35,8 +45,22 @@ class PdfChatNotifier extends _$PdfChatNotifier {
   // Store current chat session ID
   String? _currentSessionId;
 
+  // Store current PDF ID
+  String? _currentPdfId;
+
   // Store current PDF document
   PdfDocument? _currentPdf;
+
+  /// Add to cache with LRU eviction when size limit is reached
+  void _addToCache<K, V>(LinkedHashMap<K, V> cache, K key, V value) {
+    // Remove oldest entry if cache is full
+    if (cache.length >= _maxCacheSize) {
+      final oldestKey = cache.keys.first;
+      cache.remove(oldestKey);
+      AppLogger.d('Evicted oldest cache entry: $oldestKey');
+    }
+    cache[key] = value;
+  }
 
   @override
   PdfChatState build(String pdfId) {
@@ -47,15 +71,29 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     AppLogger.i('✅ _aiService initialized');
     AppLogger.i('✅ _chatRepository initialized');
 
-    // Try to load chat history for this PDF
-    _loadChatHistory(pdfId);
+    // Store pdfId for later use
+    _currentPdfId = pdfId;
 
     // Check if we have a cached PDF path for this pdfId
     final cachedPath = _pdfPathCache[pdfId];
     if (cachedPath != null) {
       AppLogger.i('✅ Found cached PDF path for $pdfId: $cachedPath');
-      // Return state with cached path (messages will be loaded asynchronously)
-      return PdfChatState.visible(currentPdfPath: cachedPath);
+
+      // Restore _currentPdf from cache if available
+      if (_pdfCache.containsKey(pdfId)) {
+        _currentPdf = _pdfCache[pdfId];
+        AppLogger.i('✅ Restored _currentPdf from cache: ${_currentPdf?.title}');
+      }
+
+      // Restore cached messages if available
+      final cachedMessages = _messagesCache[pdfId];
+      AppLogger.i('📋 Cached messages: ${cachedMessages?.length ?? 0}');
+
+      // Return state with cached path and messages
+      return PdfChatState.visible(
+        currentPdfPath: cachedPath,
+        messages: cachedMessages ?? [],
+      );
     }
 
     AppLogger.i('No cached PDF path for $pdfId, returning initial state');
@@ -64,7 +102,9 @@ class PdfChatNotifier extends _$PdfChatNotifier {
 
   /// Toggle chat panel visibility
   void togglePanel() {
-    state = state.isVisible ? const PdfChatState.hidden() : const PdfChatState.visible();
+    state = state.isVisible
+        ? const PdfChatState.hidden()
+        : const PdfChatState.visible();
   }
 
   /// Load chat history for a PDF from database
@@ -75,49 +115,96 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     }
 
     try {
-      AppLogger.i('Loading chat history for PDF: $pdfId');
+      AppLogger.i('📥 Loading chat history for PDF: $pdfId');
       final sessionResult = await _chatRepository!.getSessionByPdfId(pdfId);
+      AppLogger.i('📊 Session result type: ${sessionResult.runtimeType}');
 
-      await sessionResult.onSuccess((session) async {
-        if (session != null) {
-          AppLogger.i('Found existing session: ${session.id}');
-          _currentSessionId = session.id;
+      // Use when instead of onSuccess to ensure callback is executed
+      sessionResult.when(
+        success: (session) async {
+          AppLogger.i('✅ getSessionByPdfId returned SUCCESS');
+          if (session != null) {
+            AppLogger.i('📁 Found existing session: ${session.id}');
+            _currentSessionId = session.id;
 
-          // Load messages for this session
-          final messagesResult = await _chatRepository!.getMessages(session.id);
-          await messagesResult.onSuccess((repoMessages) {
-            AppLogger.i('Loaded ${repoMessages.length} messages from database');
-            // Convert RepositoryChatMessage to ChatMessage
-            final messages = repoMessages.map((repoMsg) {
-              return ChatMessage(
-                id: repoMsg.id,
-                content: repoMsg.content,
-                isUser: repoMsg.isUser,
-                timestamp: repoMsg.timestamp,
-                isProcessing: repoMsg.isProcessing,
-                error: repoMsg.error,
-              );
-            }).toList();
-            // Update state with loaded messages
-            state = PdfChatState.visible(
-              messages: messages,
-              currentPdfPath: session.pdfFilePath,
+            // Load messages for this session
+            final messagesResult = await _chatRepository!.getMessages(
+              session.id,
             );
-          }).onFailure((error, stackTrace) {
-            AppLogger.e('Failed to load messages', error, stackTrace);
-            // Continue with empty state on error
-          });
-        } else {
-          AppLogger.i('No existing session found for PDF: $pdfId');
+            AppLogger.i(
+              '📊 Messages result type: ${messagesResult.runtimeType}',
+            );
+
+            messagesResult.when(
+              success: (repoMessages) {
+                AppLogger.i(
+                  '✅ getMessages returned SUCCESS with ${repoMessages.length} messages',
+                );
+                try {
+                  // Convert RepositoryChatMessage to ChatMessage
+                  final messages = repoMessages.map((repoMsg) {
+                    AppLogger.d(
+                      'Converting message: ${repoMsg.id}, isUser: ${repoMsg.isUser}',
+                    );
+                    return ChatMessage(
+                      id: repoMsg.id,
+                      content: repoMsg.content,
+                      isUser: repoMsg.isUser,
+                      timestamp: repoMsg.timestamp,
+                      isProcessing: repoMsg.isProcessing,
+                      error: repoMsg.error,
+                    );
+                  }).toList();
+
+                  AppLogger.i(
+                    '💾 Loaded ${messages.length} messages from database',
+                  );
+                  AppLogger.i(
+                    '🔄 Updating state with ${messages.length} messages',
+                  );
+                  AppLogger.d(
+                    'First message: ${messages.isNotEmpty ? messages.first.content : "No messages"}',
+                  );
+
+                  // Cache messages for this PDF
+                  _addToCache(_messagesCache, pdfId, messages);
+                  AppLogger.i(
+                    '✅ Cached ${messages.length} messages for PDF: $pdfId',
+                  );
+
+                  // Update state with loaded messages
+                  state = PdfChatState.visible(
+                    messages: messages,
+                    currentPdfPath: session.pdfFilePath,
+                    extractedText: state.extractedText,
+                  );
+                  AppLogger.i('✅ State updated with messages');
+                } catch (e, st) {
+                  AppLogger.e('❌ Error converting messages', e, st);
+                }
+              },
+              failure: (error, stackTrace) {
+                AppLogger.e('❌ Failed to load messages', error, stackTrace);
+                // Continue with empty state on error
+              },
+            );
+          } else {
+            AppLogger.i('📭 No existing session found for PDF: $pdfId');
+            _currentSessionId = null;
+          }
+        },
+        failure: (error, stackTrace) {
+          AppLogger.e(
+            '❌ Failed to get session from database',
+            error,
+            stackTrace,
+          );
+          // Continue with empty state on error
           _currentSessionId = null;
-        }
-      }).onFailure((error, stackTrace) {
-        AppLogger.e('Failed to get session from database', error, stackTrace);
-        // Continue with empty state on error
-        _currentSessionId = null;
-      });
+        },
+      );
     } catch (e, st) {
-      AppLogger.e('Error loading chat history', e, st);
+      AppLogger.e('💥 Exception in _loadChatHistory', e, st);
       _currentSessionId = null;
     }
   }
@@ -183,30 +270,40 @@ class PdfChatNotifier extends _$PdfChatNotifier {
         _currentPdf!,
       );
 
-      result.onSuccess((session) {
-        _currentSessionId = session.id;
-        AppLogger.i('Session ready: ${session.id}');
-      }).onFailure((error, st) {
-        AppLogger.e('Failed to get or create session', error, st);
-        _currentSessionId = null;
-      });
+      result
+          .onSuccess((session) {
+            _currentSessionId = session.id;
+            AppLogger.i('Session ready: ${session.id}');
+          })
+          .onFailure((error, st) {
+            AppLogger.e('Failed to get or create session', error, st);
+            _currentSessionId = null;
+          });
     } catch (e, st) {
       AppLogger.e('Error getting or creating session', e, st);
       _currentSessionId = null;
     }
   }
 
-  /// Toggle chat panel visibility
-  void togglePanel() {
-    state = state.isVisible ? const PdfChatState.hidden() : const PdfChatState.visible();
-  }
-
   /// Open the chat panel
   void openPanel() {
     AppLogger.i('=== openPanel called ===');
     AppLogger.i('State before: isVisible=${state.isVisible}');
+    AppLogger.i('_currentPdfId: $_currentPdfId');
+    AppLogger.i('_currentPdf: $_currentPdf');
+
+    // Always load chat history when panel is opened
+    // Use _currentPdfId if available, fallback to _currentPdf
+    final pdfId = _currentPdfId ?? _currentPdf?.id;
+    if (pdfId != null) {
+      AppLogger.i('📝 Loading chat history for PDF: $pdfId');
+      _loadChatHistory(pdfId);
+    } else {
+      AppLogger.w('⚠️  No PDF ID available, cannot load chat history');
+    }
+
     if (!state.isVisible) {
-      // Preserve currentPdfPath, messages, and extractedText
+      // Show panel first
       state = PdfChatState.visible(
         currentPdfPath: state.currentPdfPath,
         messages: state.messages,
@@ -240,15 +337,13 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     _pdfPathCache[pdf.id] = pdf.filePath;
     AppLogger.i('✅ Cached PDF document and path for ${pdf.id}');
 
-    if (state.currentPdfPath == pdf.filePath && state.extractedText != null) {
-      // Already initialized with this PDF
-      AppLogger.i('Already initialized, skipping');
-      return;
-    }
-
-    // Store PDF path in state (persists across provider rebuilds)
+    // Store PDF path in state
     state = PdfChatState.visible(currentPdfPath: pdf.filePath);
     AppLogger.i('✅ Set state.currentPdfPath to: ${state.currentPdfPath}');
+
+    // Load chat history for this PDF
+    AppLogger.i('📝 Loading chat history for PDF: ${pdf.id}');
+    await _loadChatHistory(pdf.id);
   }
 
   /// Extract text from the PDF document
@@ -277,8 +372,11 @@ class PdfChatNotifier extends _$PdfChatNotifier {
         filePath,
         onProgress: (current, total) {
           progress = total > 0 ? current / total : 0.0;
-          if ((progress * 100).toInt() % 10 == 0) { // Log every 10%
-            AppLogger.d('Extraction progress: $current/$total (${(progress * 100).toStringAsFixed(0)}%)');
+          if ((progress * 100).toInt() % 10 == 0) {
+            // Log every 10%
+            AppLogger.d(
+              'Extraction progress: $current/$total (${(progress * 100).toStringAsFixed(0)}%)',
+            );
           }
           state = PdfChatState.visible(
             currentPdfPath: state.currentPdfPath,
@@ -329,6 +427,12 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final userMessage = ChatMessage.user(message);
     final updatedMessages = [...state.messages, userMessage];
 
+    // Cache updated messages
+    final pdfId = _currentPdfId ?? _currentPdf?.id;
+    if (pdfId != null) {
+      _addToCache(_messagesCache, pdfId, updatedMessages);
+    }
+
     state = PdfChatState.visible(
       currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
@@ -352,9 +456,17 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       );
 
       final aiMessage = ChatMessage.ai(response);
+      final allMessages = [...updatedMessages, aiMessage];
+
+      // Cache updated messages
+      final pdfId = _currentPdfId ?? _currentPdf?.id;
+      if (pdfId != null) {
+        _addToCache(_messagesCache, pdfId, allMessages);
+      }
+
       state = PdfChatState.visible(
         currentPdfPath: state.currentPdfPath,
-        messages: [...updatedMessages, aiMessage],
+        messages: allMessages,
         extractedText: state.extractedText,
       );
 
@@ -424,8 +536,16 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     }
 
     // Add a system message showing we're generating summary
-    final summaryRequestMessage = ChatMessage.user('Generate a summary of this document');
+    final summaryRequestMessage = ChatMessage.user(
+      'Generate a summary of this document',
+    );
     final updatedMessages = [...state.messages, summaryRequestMessage];
+
+    // Cache updated messages
+    final pdfId = _currentPdfId ?? _currentPdf?.id;
+    if (pdfId != null) {
+      _addToCache(_messagesCache, pdfId, updatedMessages);
+    }
 
     AppLogger.i('Setting loading state...');
     state = PdfChatState.visible(
@@ -457,9 +577,17 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       AppLogger.i('✅ Summary received, length: ${summary.length} chars');
 
       final aiMessage = ChatMessage.ai(summary);
+      final allMessages = [...updatedMessages, aiMessage];
+
+      // Cache updated messages
+      final pdfId = _currentPdfId ?? _currentPdf?.id;
+      if (pdfId != null) {
+        _addToCache(_messagesCache, pdfId, allMessages);
+      }
+
       state = PdfChatState.visible(
         currentPdfPath: state.currentPdfPath,
-        messages: [...updatedMessages, aiMessage],
+        messages: allMessages,
         extractedText: state.extractedText,
       );
 
@@ -493,8 +621,16 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       }
     }
 
-    final keyPointsMessage = ChatMessage.user('What are the key points in this document?');
+    final keyPointsMessage = ChatMessage.user(
+      'What are the key points in this document?',
+    );
     final updatedMessages = [...state.messages, keyPointsMessage];
+
+    // Cache updated messages
+    final pdfId = _currentPdfId ?? _currentPdf?.id;
+    if (pdfId != null) {
+      _addToCache(_messagesCache, pdfId, updatedMessages);
+    }
 
     state = PdfChatState.visible(
       currentPdfPath: state.currentPdfPath,
@@ -523,9 +659,17 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       );
 
       final aiMessage = ChatMessage.ai(keyPoints);
+      final allMessages = [...updatedMessages, aiMessage];
+
+      // Cache updated messages
+      final pdfId = _currentPdfId ?? _currentPdf?.id;
+      if (pdfId != null) {
+        _addToCache(_messagesCache, pdfId, allMessages);
+      }
+
       state = PdfChatState.visible(
         currentPdfPath: state.currentPdfPath,
-        messages: [...updatedMessages, aiMessage],
+        messages: allMessages,
         extractedText: state.extractedText,
       );
 
@@ -562,6 +706,12 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final customMessage = ChatMessage.user(prompt);
     final updatedMessages = [...state.messages, customMessage];
 
+    // Cache updated messages
+    final pdfId = _currentPdfId ?? _currentPdf?.id;
+    if (pdfId != null) {
+      _addToCache(_messagesCache, pdfId, updatedMessages);
+    }
+
     state = PdfChatState.visible(
       currentPdfPath: state.currentPdfPath,
       messages: updatedMessages,
@@ -586,9 +736,17 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       final result = await _aiService!.extractData(textToUse, prompt);
 
       final aiMessage = ChatMessage.ai(result);
+      final allMessages = [...updatedMessages, aiMessage];
+
+      // Cache updated messages
+      final pdfId = _currentPdfId ?? _currentPdf?.id;
+      if (pdfId != null) {
+        _addToCache(_messagesCache, pdfId, allMessages);
+      }
+
       state = PdfChatState.visible(
         currentPdfPath: state.currentPdfPath,
-        messages: [...updatedMessages, aiMessage],
+        messages: allMessages,
         extractedText: state.extractedText,
       );
 
@@ -612,9 +770,7 @@ class PdfChatNotifier extends _$PdfChatNotifier {
   void clearChat() {
     if (!state.isVisible) return;
 
-    state = PdfChatState.visible(
-      currentPdfPath: state.currentPdfPath,
-    );
+    state = PdfChatState.visible(currentPdfPath: state.currentPdfPath);
   }
 
   /// Dismiss any error message
@@ -633,7 +789,9 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     if (!state.isVisible || state.error == null) return;
 
     // Get the last user message to retry
-    final lastUserMessage = state.messages.reversed.where((m) => m.isUser).firstOrNull;
+    final lastUserMessage = state.messages.reversed
+        .where((m) => m.isUser)
+        .firstOrNull;
     if (lastUserMessage != null) {
       // Remove the failed messages and retry
       final messagesToKeep = <ChatMessage>[];

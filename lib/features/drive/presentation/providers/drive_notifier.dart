@@ -4,6 +4,7 @@ import '../../../../core/services/analytics_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/repositories/drive_repository.dart';
 import '../../data/repositories/drive_repository_impl.dart';
+import '../../data/drive_file_cache.dart';
 import 'drive_state.dart';
 
 part 'drive_notifier.g.dart';
@@ -29,10 +30,7 @@ class DriveNotifier extends _$DriveNotifier {
       final isConnected = await repository.isAuthenticated();
       final userEmail = repository.getCurrentUserEmail();
 
-      state = state.copyWith(
-        isConnected: isConnected,
-        userName: userEmail,
-      );
+      state = state.copyWith(isConnected: isConnected, userName: userEmail);
 
       AppLogger.i('Drive initialized: connected=$isConnected, user=$userEmail');
     } catch (e) {
@@ -58,12 +56,9 @@ class DriveNotifier extends _$DriveNotifier {
     state = state.copyWith(isLoading: false);
 
     return result.when(
-      success: (_) async {
+      success: (_, isFromCache) async {
         final userEmail = repository.getCurrentUserEmail();
-        state = state.copyWith(
-          isConnected: true,
-          userName: userEmail,
-        );
+        state = state.copyWith(isConnected: true, userName: userEmail);
 
         // Track connection event
         await AnalyticsService.instance.trackDriveConnect();
@@ -85,35 +80,34 @@ class DriveNotifier extends _$DriveNotifier {
   Future<void> disconnect() async {
     final repository = ref.read(driveRepositoryProvider);
     await repository.signOut();
-    state = state.copyWith(
-      isConnected: false,
-      userName: null,
-      files: [],
-    );
+    state = state.copyWith(isConnected: false, userName: null, files: []);
 
     // Track disconnect event
     await AnalyticsService.instance.trackDriveDisconnect();
   }
 
   /// Load PDF files from Google Drive
-  Future<void> loadDriveFiles() async {
+  /// Use [strategy] to control cache behavior
+  Future<void> loadDriveFiles([
+    DriveCacheStrategy strategy = DriveCacheStrategy.cacheThenRefresh,
+  ]) async {
     if (!state.isConnected) {
-      state = state.copyWith(
-        errorMessage: 'Not connected to Google Drive',
-      );
+      state = state.copyWith(errorMessage: 'Not connected to Google Drive');
       return;
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     final repository = ref.read(driveRepositoryProvider);
-    final result = await repository.getPdfFiles();
+    final result = await repository.getPdfFiles(strategy);
 
     result.when(
-      success: (files) {
+      success: (files, isFromCache) {
         state = state.copyWith(
           files: files,
           isLoading: false,
+          isFromCache: isFromCache,
+          lastSyncTime: isFromCache ? state.lastSyncTime : DateTime.now(),
         );
 
         // Track browse event
@@ -121,10 +115,40 @@ class DriveNotifier extends _$DriveNotifier {
       },
       failure: (failure) {
         final message = _getFailureMessage(failure);
+        state = state.copyWith(isLoading: false, errorMessage: message);
+      },
+    );
+  }
+
+  /// Refresh PDF files from Google Drive (force fetch from API)
+  /// This method is used by pull-to-refresh
+  Future<void> refreshDriveFiles() async {
+    if (!state.isConnected) {
+      state = state.copyWith(errorMessage: 'Not connected to Google Drive');
+      return;
+    }
+
+    // Set refreshing state but keep current data visible
+    state = state.copyWith(isRefreshing: true, errorMessage: null);
+
+    final repository = ref.read(driveRepositoryProvider);
+    final result = await repository.refreshPdfFiles();
+
+    result.when(
+      success: (files, isFromCache) {
         state = state.copyWith(
-          isLoading: false,
-          errorMessage: message,
+          files: files,
+          isRefreshing: false,
+          isFromCache: isFromCache,
+          lastSyncTime: DateTime.now(),
         );
+
+        // Track browse event
+        AnalyticsService.instance.trackDriveBrowse(fileCount: files.length);
+      },
+      failure: (failure) {
+        final message = _getFailureMessage(failure);
+        state = state.copyWith(isRefreshing: false, errorMessage: message);
       },
     );
   }
@@ -132,9 +156,7 @@ class DriveNotifier extends _$DriveNotifier {
   /// Download a PDF file from Google Drive
   Future<String?> downloadPdf(String fileId, String fileName) async {
     if (!state.isConnected) {
-      state = state.copyWith(
-        errorMessage: 'Not connected to Google Drive',
-      );
+      state = state.copyWith(errorMessage: 'Not connected to Google Drive');
       return null;
     }
 
@@ -147,18 +169,12 @@ class DriveNotifier extends _$DriveNotifier {
     final repository = ref.read(driveRepositoryProvider);
     final result = await repository.downloadPdf(fileId, fileName);
 
-    state = state.copyWith(
-      isDownloading: false,
-      downloadingFileName: null,
-    );
+    state = state.copyWith(isDownloading: false, downloadingFileName: null);
 
     return result.when(
-      success: (localPath) {
+      success: (localPath, isFromCache) {
         // Track download event
-        AnalyticsService.instance.trackDriveDownload(
-          fileId,
-          success: true,
-        );
+        AnalyticsService.instance.trackDriveDownload(fileId, success: true);
 
         return localPath;
       },
@@ -167,10 +183,7 @@ class DriveNotifier extends _$DriveNotifier {
         state = state.copyWith(errorMessage: message);
 
         // Track failed download
-        AnalyticsService.instance.trackDriveDownload(
-          fileId,
-          success: false,
-        );
+        AnalyticsService.instance.trackDriveDownload(fileId, success: false);
 
         return null;
       },
@@ -198,10 +211,7 @@ class DriveNotifier extends _$DriveNotifier {
     final isConnected = await repository.isAuthenticated();
     final userEmail = repository.getCurrentUserEmail();
 
-    state = state.copyWith(
-      isConnected: isConnected,
-      userName: userEmail,
-    );
+    state = state.copyWith(isConnected: isConnected, userName: userEmail);
   }
 }
 

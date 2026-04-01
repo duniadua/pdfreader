@@ -66,9 +66,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildHeader(context),
 
           // Body Content
-          Expanded(
-            child: _buildBody(state.settings),
-          ),
+          Expanded(child: _buildBody(state.settings)),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(isDark),
@@ -82,9 +80,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         : AppTheme.backgroundLight;
 
     return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor.withValues(alpha: 0.8),
-      ),
+      decoration: BoxDecoration(color: backgroundColor.withValues(alpha: 0.8)),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -132,9 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       height: 65,
       decoration: BoxDecoration(
-        color: isDark
-            ? AppTheme.backgroundDark
-            : AppTheme.backgroundLight,
+        color: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
         border: Border(
           top: BorderSide(
             color: isDark
@@ -190,8 +184,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: isSelected
                   ? AppTheme.primary
                   : isDark
-                      ? Colors.white
-                      : const Color(0xFF64748B),
+                  ? Colors.white
+                  : const Color(0xFF64748B),
             ),
           ),
         ],
@@ -218,7 +212,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 isDark: isDark,
                 value: settings.darkMode,
                 onChanged: (value) {
-                  ref.read(settingsNotifierProvider.notifier).setDarkMode(value);
+                  ref
+                      .read(settingsNotifierProvider.notifier)
+                      .setDarkMode(value);
                 },
               ),
               _buildDivider(isDark),
@@ -226,7 +222,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 isDark: isDark,
                 value: settings.brightness,
                 onChanged: (value) {
-                  ref.read(settingsNotifierProvider.notifier).setBrightness(value);
+                  ref
+                      .read(settingsNotifierProvider.notifier)
+                      .setBrightness(value);
                 },
               ),
             ],
@@ -251,9 +249,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildSectionHeader('Google Drive', isDark),
           _buildSettingsGroup(
             isDark: isDark,
-            children: [
-              _buildDriveSettings(isDark: isDark),
-            ],
+            children: [_buildDriveSettings(isDark: isDark)],
           ),
 
           const SizedBox(height: 24),
@@ -285,7 +281,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Icons.cloud,
                   color: driveState.isConnected
                       ? Colors.green
-                      : isDark ? Colors.white : const Color(0xFF334155),
+                      : isDark
+                      ? Colors.white
+                      : const Color(0xFF334155),
                   size: 20,
                 ),
               ),
@@ -322,9 +320,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (driveState.isConnected)
                 TextButton(
                   onPressed: () => _disconnectDrive(),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
                   child: Text(
                     'Disconnect',
                     style: GoogleFonts.inter(
@@ -394,11 +390,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       // Connect to Drive
-      final success = await ref.read(driveNotifierProvider.notifier).connect(
-        accessToken: credentials['accessToken'] as String,
-        refreshToken: credentials['refreshToken'] as String,
-        expiry: credentials['expiry'] as DateTime,
-      );
+      final success = await ref
+          .read(driveNotifierProvider.notifier)
+          .connect(
+            accessToken: credentials['accessToken'] as String,
+            refreshToken: credentials['refreshToken'] as String,
+            expiry: credentials['expiry'] as DateTime,
+          );
 
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -564,7 +562,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Icon(
                 Icons.light_mode_outlined,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
                 size: 20,
               ),
               Expanded(
@@ -592,7 +592,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               Icon(
                 Icons.light_mode,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
                 size: 20,
               ),
             ],
@@ -620,7 +622,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 initial: () => _buildGuestUserInfo(isDark),
                 unauthenticated: () => _buildGuestUserInfo(isDark),
                 loading: () => _buildLoadingUserInfo(isDark),
-                authenticated: (user) => _buildAuthenticatedUserInfo(user, isDark),
+                authenticated: (user) =>
+                    _buildAuthenticatedUserInfo(user, isDark),
                 error: (_) => _buildGuestUserInfo(isDark),
               ),
             ),
@@ -713,7 +716,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
               ),
             ),
           ],

@@ -1,0 +1,14 @@
+part '{{name}}.g.dart';
+part '{{name}}.freezed.dart';
+
+@freezed
+class {{ClassName}} with _${{ClassName}} {
+  const {{ClassName}}._();
+
+  const factory {{ClassName}}({
+    {{fields}}
+  }) = _{{ClassName}};
+
+  factory {{ClassName}}.fromJson(Map<String, Object?> json) =>
+      _${{ClassName}}FromJson(json);
+}

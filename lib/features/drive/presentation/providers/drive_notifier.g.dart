@@ -66,7 +66,7 @@ final driveDownloadingFileNameProvider = AutoDisposeProvider<String?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DriveDownloadingFileNameRef = AutoDisposeProviderRef<String?>;
-String _$driveNotifierHash() => r'a546d8ec76235696e654e4c245ff2fd68ab309d8';
+String _$driveNotifierHash() => r'c14f5ad7a2d95aad930b7415795946ad7ac707fe';
 
 /// Notifier for Google Drive state management
 ///

@@ -11,9 +11,7 @@ class GetDriveFilesUseCase {
   /// Returns a result containing list of Drive files or a failure
   Future<DriveResult<List<DriveFileModel>>> call() async {
     if (!await _repository.isAuthenticated()) {
-      return const DriveResult.failure(
-        DriveFailure.notAuthenticated(),
-      );
+      return const DriveResult.failure(DriveFailure.notAuthenticated());
     }
 
     return await _repository.getPdfFiles();

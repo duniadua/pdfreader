@@ -141,10 +141,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'pdf_favorite',
-        parameters: {
-          'pdf_id': pdfId,
-          'is_favorite': isFavorite,
-        },
+        parameters: {'pdf_id': pdfId, 'is_favorite': isFavorite},
       );
       AppLogger.d('Analytics: PDF favorite - $pdfId ($isFavorite)');
     } catch (e) {
@@ -207,7 +204,8 @@ class AnalyticsService {
     required String pdfId,
     required int fromPage,
     required int toPage,
-    String navigationType = 'unknown', // 'scroll', 'jump', 'thumbnail', 'slider'
+    String navigationType =
+        'unknown', // 'scroll', 'jump', 'thumbnail', 'slider'
   }) async {
     if (kDebugMode) return;
 
@@ -221,7 +219,9 @@ class AnalyticsService {
           'navigation_type': navigationType,
         },
       );
-      AppLogger.d('Analytics: Page navigation - $fromPage -> $toPage ($navigationType)');
+      AppLogger.d(
+        'Analytics: Page navigation - $fromPage -> $toPage ($navigationType)',
+      );
     } catch (e) {
       AppLogger.e('Failed to track page navigation', e);
     }
@@ -245,9 +245,7 @@ class AnalyticsService {
   }
 
   /// Track zoom change
-  Future<void> trackZoomChange({
-    required double zoomLevel,
-  }) async {
+  Future<void> trackZoomChange({required double zoomLevel}) async {
     if (kDebugMode) return;
 
     try {
@@ -288,10 +286,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'bookmark_add',
-        parameters: {
-          'pdf_id': pdfId,
-          'page_number': pageNumber,
-        },
+        parameters: {'pdf_id': pdfId, 'page_number': pageNumber},
       );
       AppLogger.d('Analytics: Bookmark add - $pdfId:$pageNumber');
     } catch (e) {
@@ -309,10 +304,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'bookmark_remove',
-        parameters: {
-          'pdf_id': pdfId,
-          'page_number': pageNumber,
-        },
+        parameters: {'pdf_id': pdfId, 'page_number': pageNumber},
       );
       AppLogger.d('Analytics: Bookmark remove - $pdfId:$pageNumber');
     } catch (e) {
@@ -330,12 +322,11 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'toc_navigation',
-        parameters: {
-          'pdf_id': pdfId,
-          'destination_page': destinationPage,
-        },
+        parameters: {'pdf_id': pdfId, 'destination_page': destinationPage},
       );
-      AppLogger.d('Analytics: TOC navigation - $pdfId -> page $destinationPage');
+      AppLogger.d(
+        'Analytics: TOC navigation - $pdfId -> page $destinationPage',
+      );
     } catch (e) {
       AppLogger.e('Failed to track TOC navigation', e);
     }
@@ -351,10 +342,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'pdf_share',
-        parameters: {
-          'pdf_id': pdfId,
-          'share_method': method,
-        },
+        parameters: {'pdf_id': pdfId, 'share_method': method},
       );
       AppLogger.d('Analytics: PDF share - $pdfId via $method');
     } catch (e) {
@@ -406,10 +394,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'setting_toggle',
-        parameters: {
-          'setting_name': settingName,
-          'enabled': enabled,
-        },
+        parameters: {'setting_name': settingName, 'enabled': enabled},
       );
       AppLogger.d('Analytics: Setting toggle - $settingName = $enabled');
     } catch (e) {
@@ -515,10 +500,7 @@ class AnalyticsService {
     try {
       // Convert nullable map to non-nullable for Firebase Analytics
       final params = parameters?.cast<String, Object>();
-      await _analyticsInstance?.logEvent(
-        name: name,
-        parameters: params,
-      );
+      await _analyticsInstance?.logEvent(name: name, parameters: params);
       AppLogger.d('Analytics: Custom event - $name');
     } catch (e) {
       AppLogger.e('Failed to track custom event', e);
@@ -587,19 +569,13 @@ class AnalyticsService {
   }
 
   /// Track Google Drive file download
-  Future<void> trackDriveDownload(
-    String fileId, {
-    bool success = true,
-  }) async {
+  Future<void> trackDriveDownload(String fileId, {bool success = true}) async {
     if (kDebugMode) return;
 
     try {
       await _analyticsInstance?.logEvent(
         name: 'drive_download',
-        parameters: {
-          'file_id': fileId,
-          'success': success,
-        },
+        parameters: {'file_id': fileId, 'success': success},
       );
       AppLogger.d('Analytics: Drive download - $fileId ($success)');
     } catch (e) {
@@ -647,10 +623,7 @@ class AnalyticsService {
     try {
       await _analyticsInstance?.logEvent(
         name: 'drive_file_open',
-        parameters: {
-          'file_id': fileId,
-          'file_name': fileName,
-        },
+        parameters: {'file_id': fileId, 'file_name': fileName},
       );
       AppLogger.d('Analytics: Drive file open - $fileName');
     } catch (e) {

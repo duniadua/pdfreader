@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Database entity for chat sessions.
 /// Represents a chat session associated with a PDF document.
 class ChatSessionEntity {
@@ -98,10 +96,12 @@ class ChatSessionEntity {
   }
 
   /// Convert createdAt timestamp to DateTime
-  DateTime get createdAtDateTime => DateTime.fromMillisecondsSinceEpoch(createdAt);
+  DateTime get createdAtDateTime =>
+      DateTime.fromMillisecondsSinceEpoch(createdAt);
 
   /// Convert updatedAt timestamp to DateTime
-  DateTime get updatedAtDateTime => DateTime.fromMillisecondsSinceEpoch(updatedAt);
+  DateTime get updatedAtDateTime =>
+      DateTime.fromMillisecondsSinceEpoch(updatedAt);
 
   /// Convert lastMessageAt timestamp to DateTime, or null if not set
   DateTime? get lastMessageAtDateTime => lastMessageAt != null

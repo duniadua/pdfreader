@@ -96,7 +96,9 @@ void main() {
           success: (_) {
             verify(mockPrefs.setBool('dark_mode', true)).called(1);
             verify(mockPrefs.setDouble('font_size', 20.0)).called(1);
-            verify(mockPrefs.setString('scroll_direction', 'horizontal')).called(1);
+            verify(
+              mockPrefs.setString('scroll_direction', 'horizontal'),
+            ).called(1);
             verify(mockPrefs.setBool('auto_crop_margins', true)).called(1);
             verify(mockPrefs.setDouble('brightness', 0.9)).called(1);
           },
@@ -121,7 +123,9 @@ void main() {
 
         result.when(
           success: (_) {
-            verify(mockPrefs.setString('scroll_direction', 'vertical')).called(1);
+            verify(
+              mockPrefs.setString('scroll_direction', 'vertical'),
+            ).called(1);
           },
           failure: (_, __) => fail('Should not return failure'),
         );

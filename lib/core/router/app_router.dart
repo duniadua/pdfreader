@@ -34,11 +34,7 @@ class _ErrorPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               Text(
                 'Page not found',
@@ -77,9 +73,8 @@ GoRouter router(Ref ref) {
       // Main Library Screen with Bottom Navigation
       GoRoute(
         path: AppRoutes.library,
-        pageBuilder: (context, state) => const MaterialPage(
-          child: LibraryScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: LibraryScreen()),
       ),
 
       // PDF Reader Screen
@@ -92,18 +87,15 @@ GoRouter router(Ref ref) {
               child: _ErrorPage(error: 'PDF ID is required'),
             );
           }
-          return MaterialPage(
-            child: PdfReaderScreen(pdfId: pdfId),
-          );
+          return MaterialPage(child: PdfReaderScreen(pdfId: pdfId));
         },
       ),
 
       // Settings Screen
       GoRoute(
         path: AppRoutes.settings,
-        pageBuilder: (context, state) => const MaterialPage(
-          child: SettingsScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: SettingsScreen()),
       ),
 
       // Favorites (implemented in library tab)
@@ -130,8 +122,6 @@ GoRouter router(Ref ref) {
         ),
       ),
     ],
-    errorBuilder: (context, state) => _ErrorPage(
-      error: state.uri.toString(),
-    ),
+    errorBuilder: (context, state) => _ErrorPage(error: state.uri.toString()),
   );
 }

@@ -11,8 +11,8 @@ class FirebaseAuthRepository {
   const FirebaseAuthRepository({
     required FirebaseAuth firebaseAuth,
     required GoogleSignIn googleSignIn,
-  })  : _firebaseAuth = firebaseAuth,
-        _googleSignIn = googleSignIn;
+  }) : _firebaseAuth = firebaseAuth,
+       _googleSignIn = googleSignIn;
 
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
@@ -47,8 +47,8 @@ class FirebaseAuthRepository {
       );
 
       // Sign in to Firebase with the Google credential
-      final UserCredential userCredential =
-          await _firebaseAuth.signInWithCredential(credential);
+      final UserCredential userCredential = await _firebaseAuth
+          .signInWithCredential(credential);
 
       final User? user = userCredential.user;
       if (user == null) {
@@ -118,7 +118,8 @@ class FirebaseAuthRepository {
   Future<Map<String, dynamic>?> getGoogleCredentials() async {
     try {
       // Try to sign in silently first - this restores the session if user was previously signed in
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      final GoogleSignInAccount? googleUser = await _googleSignIn
+          .signInSilently();
 
       if (googleUser == null) {
         return null;

@@ -108,7 +108,8 @@ class PdfReaderState with _$PdfReaderState {
 
   const factory PdfReaderState.notFound() = _PdfReaderNotFound;
 
-  const factory PdfReaderState.fileNotFound(String filePath) = _PdfReaderFileNotFound;
+  const factory PdfReaderState.fileNotFound(String filePath) =
+      _PdfReaderFileNotFound;
 
   const factory PdfReaderState.error(String message) = _PdfReaderError;
 }

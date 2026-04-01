@@ -43,7 +43,10 @@ class ChatSessionDao {
   }
 
   /// Get all sessions (non-archived), ordered by most recently updated
-  Future<List<ChatSessionEntity>> getAll({int limit = 20, int offset = 0}) async {
+  Future<List<ChatSessionEntity>> getAll({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     final maps = await _database.query(
       TableNames.chatSessions,
       where: 'is_archived = 0',

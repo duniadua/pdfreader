@@ -10,11 +10,7 @@ void main() {
   group('SettingsScreen Widget Tests', () {
     testWidgets('should render without errors', (WidgetTester tester) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: const MaterialApp(
-            home: SettingsScreen(),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SettingsScreen())),
       );
 
       // Just check it doesn't crash

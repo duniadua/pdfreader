@@ -23,10 +23,10 @@ class SettingsState with _$SettingsState {
   }) = _SettingsState;
 
   factory SettingsState.initial() => SettingsState(
-        settings: AppSettings.defaultSettings(),
-        isLoading: true,
-        failure: null,
-      );
+    settings: AppSettings.defaultSettings(),
+    isLoading: true,
+    failure: null,
+  );
 }
 
 /// Settings state notifier
@@ -119,12 +119,12 @@ class SettingsNotifier extends _$SettingsNotifier {
     final level = clampedValue < 0.2
         ? 'min'
         : clampedValue < 0.4
-            ? 'low'
-            : clampedValue < 0.6
-                ? 'medium'
-                : clampedValue < 0.8
-                    ? 'high'
-                    : 'max';
+        ? 'low'
+        : clampedValue < 0.6
+        ? 'medium'
+        : clampedValue < 0.8
+        ? 'high'
+        : 'max';
     AnalyticsService.instance.trackBrightnessChange(level: level);
     final newSettings = state.settings.copyWith(brightness: clampedValue);
     await _updateSettings(newSettings);

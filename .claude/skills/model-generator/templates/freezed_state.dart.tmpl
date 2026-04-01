@@ -1,0 +1,28 @@
+part '{{name}}.g.dart';
+part '{{name}}.freezed.dart';
+
+@freezed
+class {{ClassName}} with _${{ClassName}} {
+  const {{ClassName}}._();
+
+  const factory {{ClassName}}.initial() = _{{ClassName}}Initial;
+
+  {{state_variants}}
+
+  /// Extension for convenience methods on {{ClassName}}
+  extension {{ClassName}}X on {{ClassName}} {
+    /// Returns true if the state is loading
+    bool get isLoading => map(
+      initial: (_) => false,
+      {{variant_loading_checks}}
+    );
+
+    /// Returns true if the state has an error
+    bool get hasError => map(
+      initial: (_) => false,
+      {{variant_error_checks}}
+    );
+
+    {{additional_convenience_methods}}
+  }
+}

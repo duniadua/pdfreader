@@ -204,7 +204,10 @@ class LibraryNotifier extends _$LibraryNotifier {
   /// Toggle favorite status
   Future<void> toggleFavorite(String pdfId) async {
     // Find PDF to check current favorite status before toggling
-    final pdf = state.allPdfs.firstWhere((p) => p.id == pdfId, orElse: () => state.allPdfs.first);
+    final pdf = state.allPdfs.firstWhere(
+      (p) => p.id == pdfId,
+      orElse: () => state.allPdfs.first,
+    );
 
     final result = await _repository.toggleFavorite(pdfId);
     result.when(
@@ -449,9 +452,7 @@ class LibraryNotifier extends _$LibraryNotifier {
       addResult.when(
         failure: (error, stackTrace) {
           AppLogger.e('Failed to import downloaded PDF', error, stackTrace);
-          state = state.copyWith(
-            failure: _handleAppFailure(error, stackTrace),
-          );
+          state = state.copyWith(failure: _handleAppFailure(error, stackTrace));
         },
         success: (addedPdf) async {
           AppLogger.i('Successfully imported downloaded PDF: $fileName');

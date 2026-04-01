@@ -1,0 +1,82 @@
+import 'package:flutter_test/flutter_test.dart';
+
+{{imports}}
+
+void main() {
+  group('{{ModelName}}', () {
+    test('should create instance with required fields', () {
+      // Arrange & Act
+      const {{model_variable}} = {{ModelName}}(
+        {{required_fields}}
+      );
+
+      // Assert
+      {{required_assertions}}
+    });
+
+    test('should create instance with optional fields', () {
+      // Arrange & Act
+      const {{model_variable}} = {{ModelName}}(
+        {{required_fields}}
+        {{optional_fields}}
+      );
+
+      // Assert
+      {{optional_assertions}}
+    });
+
+    test('should serialize to JSON correctly', () {
+      // Arrange
+      const {{model_variable}} = {{ModelName}}(
+        {{all_fields}}
+      );
+
+      // Act
+      final json = {{model_variable}}.toJson();
+
+      // Assert
+      expect(json, isA<Map<String, dynamic>>());
+      {{json_field_assertions}}
+    });
+
+    test('should deserialize from JSON correctly', () {
+      // Arrange
+      final json = {{json_data}};
+
+      // Act
+      final {{model_variable}} = {{ModelName}}.fromJson(json);
+
+      // Assert
+      {{deserialization_assertions}}
+    });
+
+    test('should copy with new values', () {
+      // Arrange
+      const {{model_variable}} = {{ModelName}}(
+        {{all_fields}}
+      );
+
+      // Act
+      final updated = {{model_variable}}.copyWith(
+        {{updated_field}}: {{updated_value}}
+      );
+
+      // Assert
+      expect(updated.{{updated_field}}, {{updated_value}});
+      expect(updated.{{other_field}}, {{model_variable}}.{{other_field}});
+    });
+
+    test('should implement equality correctly', () {
+      // Arrange
+      const {{model_variable}}1 = {{ModelName}}({{field}}: {{value1}});
+      const {{model_variable}}2 = {{ModelName}}({{field}}: {{value1}});
+      const {{model_variable}}3 = {{ModelName}}({{field}}: {{value2}});
+
+      // Assert
+      expect({{model_variable}}1, equals({{model_variable}}2));
+      expect({{model_variable}}1, isNot(equals({{model_variable}}3)));
+    });
+
+    {{additional_tests}}
+  });
+}

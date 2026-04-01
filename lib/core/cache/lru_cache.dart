@@ -5,11 +5,9 @@ import 'dart:collection';
 /// Evicts the least recently used items when the cache reaches its maximum size.
 /// Useful for caching PDF metadata and other frequently accessed data.
 class LruCache<K, V> {
-  LruCache({
-    required this.maxSize,
-    this.onEvict,
-  }) : assert(maxSize > 0, 'maxSize must be positive'),
-       _cache = LinkedHashMap<K, V>();
+  LruCache({required this.maxSize, this.onEvict})
+    : assert(maxSize > 0, 'maxSize must be positive'),
+      _cache = LinkedHashMap<K, V>();
 
   /// Maximum number of items to store in cache
   final int maxSize;
@@ -98,12 +96,12 @@ class LruCache<K, V> {
 
   /// Get cache statistics
   CacheStats get stats => CacheStats(
-        size: size,
-        maxSize: maxSize,
-        hitCount: _hitCount,
-        missCount: _missCount,
-        hitRate: hitRate,
-      );
+    size: size,
+    maxSize: maxSize,
+    hitCount: _hitCount,
+    missCount: _missCount,
+    hitRate: hitRate,
+  );
 
   /// Reset statistics counters
   void resetStats() {

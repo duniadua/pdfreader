@@ -1,0 +1,141 @@
+/// Screen for {{FeatureName}}
+///
+/// Displays {{entity}} list and details.
+/// Follows Clean Architecture and Material 3 guidelines.
+class {{FeatureName}}Screen extends ConsumerWidget {
+  const {{FeatureName}}Screen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch({{featureName}}NotifierProvider);
+
+    return Scaffold(
+      appBar: _buildAppBar(context),
+      body: _buildBody(context, ref, state),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      title: const Text('{{Feature Title}}'),
+      actions: [
+        // TODO: Add action buttons (refresh, settings, etc.)
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: () {
+            // TODO: Implement refresh
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody(BuildContext context, WidgetRef ref, {{StateType}} state) {
+    return state.when(
+      initial: () => const _InitialView(),
+      loading: () => const _LoadingView(),
+      data: (data) => _DataView(data: data),
+      error: (error) => _ErrorView(error: error),
+    );
+  }
+}
+
+class _InitialView extends StatelessWidget {
+  const _InitialView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.{{entity_icon}},
+            size: 64,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '{{Empty State Message}}',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '{{Action Prompt}}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+}
+
+class _DataView extends StatelessWidget {
+  const _DataView({required this.data});
+
+  final {{DataType}} data;
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Implement data view
+    // - Display {{entity}} list
+    // - Add item tap handlers
+    // - Show empty state if needed
+    return Placeholder(
+      child: Center(
+        child: Text('Data: ${data.toString()}'),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.error});
+
+  final String error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implement retry
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}

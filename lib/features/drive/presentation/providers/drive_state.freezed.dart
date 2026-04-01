@@ -20,10 +20,13 @@ mixin _$DriveState {
   bool get isConnected => throw _privateConstructorUsedError;
   bool get isLoading => throw _privateConstructorUsedError;
   bool get isDownloading => throw _privateConstructorUsedError;
+  bool get isRefreshing => throw _privateConstructorUsedError;
+  bool get isFromCache => throw _privateConstructorUsedError;
   String? get userName => throw _privateConstructorUsedError;
   String? get downloadingFileName => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
   List<DriveFileModel> get files => throw _privateConstructorUsedError;
+  DateTime? get lastSyncTime => throw _privateConstructorUsedError;
 
   /// Create a copy of DriveState
   /// with the given fields replaced by the non-null parameter values.
@@ -43,10 +46,13 @@ abstract class $DriveStateCopyWith<$Res> {
     bool isConnected,
     bool isLoading,
     bool isDownloading,
+    bool isRefreshing,
+    bool isFromCache,
     String? userName,
     String? downloadingFileName,
     String? errorMessage,
     List<DriveFileModel> files,
+    DateTime? lastSyncTime,
   });
 }
 
@@ -68,10 +74,13 @@ class _$DriveStateCopyWithImpl<$Res, $Val extends DriveState>
     Object? isConnected = null,
     Object? isLoading = null,
     Object? isDownloading = null,
+    Object? isRefreshing = null,
+    Object? isFromCache = null,
     Object? userName = freezed,
     Object? downloadingFileName = freezed,
     Object? errorMessage = freezed,
     Object? files = null,
+    Object? lastSyncTime = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -86,6 +95,14 @@ class _$DriveStateCopyWithImpl<$Res, $Val extends DriveState>
             isDownloading: null == isDownloading
                 ? _value.isDownloading
                 : isDownloading // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isRefreshing: null == isRefreshing
+                ? _value.isRefreshing
+                : isRefreshing // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isFromCache: null == isFromCache
+                ? _value.isFromCache
+                : isFromCache // ignore: cast_nullable_to_non_nullable
                       as bool,
             userName: freezed == userName
                 ? _value.userName
@@ -103,6 +120,10 @@ class _$DriveStateCopyWithImpl<$Res, $Val extends DriveState>
                 ? _value.files
                 : files // ignore: cast_nullable_to_non_nullable
                       as List<DriveFileModel>,
+            lastSyncTime: freezed == lastSyncTime
+                ? _value.lastSyncTime
+                : lastSyncTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
           )
           as $Val,
     );
@@ -122,10 +143,13 @@ abstract class _$$DriveStateImplCopyWith<$Res>
     bool isConnected,
     bool isLoading,
     bool isDownloading,
+    bool isRefreshing,
+    bool isFromCache,
     String? userName,
     String? downloadingFileName,
     String? errorMessage,
     List<DriveFileModel> files,
+    DateTime? lastSyncTime,
   });
 }
 
@@ -146,10 +170,13 @@ class __$$DriveStateImplCopyWithImpl<$Res>
     Object? isConnected = null,
     Object? isLoading = null,
     Object? isDownloading = null,
+    Object? isRefreshing = null,
+    Object? isFromCache = null,
     Object? userName = freezed,
     Object? downloadingFileName = freezed,
     Object? errorMessage = freezed,
     Object? files = null,
+    Object? lastSyncTime = freezed,
   }) {
     return _then(
       _$DriveStateImpl(
@@ -164,6 +191,14 @@ class __$$DriveStateImplCopyWithImpl<$Res>
         isDownloading: null == isDownloading
             ? _value.isDownloading
             : isDownloading // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isRefreshing: null == isRefreshing
+            ? _value.isRefreshing
+            : isRefreshing // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isFromCache: null == isFromCache
+            ? _value.isFromCache
+            : isFromCache // ignore: cast_nullable_to_non_nullable
                   as bool,
         userName: freezed == userName
             ? _value.userName
@@ -181,6 +216,10 @@ class __$$DriveStateImplCopyWithImpl<$Res>
             ? _value._files
             : files // ignore: cast_nullable_to_non_nullable
                   as List<DriveFileModel>,
+        lastSyncTime: freezed == lastSyncTime
+            ? _value.lastSyncTime
+            : lastSyncTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
       ),
     );
   }
@@ -193,10 +232,13 @@ class _$DriveStateImpl implements _DriveState {
     this.isConnected = false,
     this.isLoading = false,
     this.isDownloading = false,
+    this.isRefreshing = false,
+    this.isFromCache = false,
     this.userName,
     this.downloadingFileName,
     this.errorMessage,
     final List<DriveFileModel> files = const [],
+    this.lastSyncTime,
   }) : _files = files;
 
   @override
@@ -208,6 +250,12 @@ class _$DriveStateImpl implements _DriveState {
   @override
   @JsonKey()
   final bool isDownloading;
+  @override
+  @JsonKey()
+  final bool isRefreshing;
+  @override
+  @JsonKey()
+  final bool isFromCache;
   @override
   final String? userName;
   @override
@@ -224,8 +272,11 @@ class _$DriveStateImpl implements _DriveState {
   }
 
   @override
+  final DateTime? lastSyncTime;
+
+  @override
   String toString() {
-    return 'DriveState(isConnected: $isConnected, isLoading: $isLoading, isDownloading: $isDownloading, userName: $userName, downloadingFileName: $downloadingFileName, errorMessage: $errorMessage, files: $files)';
+    return 'DriveState(isConnected: $isConnected, isLoading: $isLoading, isDownloading: $isDownloading, isRefreshing: $isRefreshing, isFromCache: $isFromCache, userName: $userName, downloadingFileName: $downloadingFileName, errorMessage: $errorMessage, files: $files, lastSyncTime: $lastSyncTime)';
   }
 
   @override
@@ -239,13 +290,19 @@ class _$DriveStateImpl implements _DriveState {
                 other.isLoading == isLoading) &&
             (identical(other.isDownloading, isDownloading) ||
                 other.isDownloading == isDownloading) &&
+            (identical(other.isRefreshing, isRefreshing) ||
+                other.isRefreshing == isRefreshing) &&
+            (identical(other.isFromCache, isFromCache) ||
+                other.isFromCache == isFromCache) &&
             (identical(other.userName, userName) ||
                 other.userName == userName) &&
             (identical(other.downloadingFileName, downloadingFileName) ||
                 other.downloadingFileName == downloadingFileName) &&
             (identical(other.errorMessage, errorMessage) ||
                 other.errorMessage == errorMessage) &&
-            const DeepCollectionEquality().equals(other._files, _files));
+            const DeepCollectionEquality().equals(other._files, _files) &&
+            (identical(other.lastSyncTime, lastSyncTime) ||
+                other.lastSyncTime == lastSyncTime));
   }
 
   @override
@@ -254,10 +311,13 @@ class _$DriveStateImpl implements _DriveState {
     isConnected,
     isLoading,
     isDownloading,
+    isRefreshing,
+    isFromCache,
     userName,
     downloadingFileName,
     errorMessage,
     const DeepCollectionEquality().hash(_files),
+    lastSyncTime,
   );
 
   /// Create a copy of DriveState
@@ -274,10 +334,13 @@ abstract class _DriveState implements DriveState {
     final bool isConnected,
     final bool isLoading,
     final bool isDownloading,
+    final bool isRefreshing,
+    final bool isFromCache,
     final String? userName,
     final String? downloadingFileName,
     final String? errorMessage,
     final List<DriveFileModel> files,
+    final DateTime? lastSyncTime,
   }) = _$DriveStateImpl;
 
   @override
@@ -287,6 +350,10 @@ abstract class _DriveState implements DriveState {
   @override
   bool get isDownloading;
   @override
+  bool get isRefreshing;
+  @override
+  bool get isFromCache;
+  @override
   String? get userName;
   @override
   String? get downloadingFileName;
@@ -294,6 +361,8 @@ abstract class _DriveState implements DriveState {
   String? get errorMessage;
   @override
   List<DriveFileModel> get files;
+  @override
+  DateTime? get lastSyncTime;
 
   /// Create a copy of DriveState
   /// with the given fields replaced by the non-null parameter values.

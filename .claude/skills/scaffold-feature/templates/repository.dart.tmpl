@@ -1,0 +1,31 @@
+/// Repository interface for {{FeatureName}}
+///
+/// Provides data access methods for {{feature_name}} feature.
+/// Follows Clean Architecture principles from `.claude/rules/architecture.md`.
+abstract class {{FeatureName}}Repository {
+  /// Fetches {{entity}} data
+  ///
+  /// Returns [Result] containing either [{{DataType}}] on success
+  /// or [AppFailure] on error.
+  Future<Result<{{DataType}}>>> get{{Entity}}(String id);
+
+  /// Saves {{entity}} data
+  ///
+  /// Returns [Result] containing either void on success
+  /// or [AppFailure] on error.
+  Future<Result<void>> save{{Entity}}({{DataType}} data);
+
+  /// Deletes {{entity}} data
+  ///
+  /// Returns [Result] containing either void on success
+  /// or [AppFailure] on error.
+  Future<Result<void>> delete{{Entity}}(String id);
+
+  /// Lists all {{entities}} with optional filtering
+  ///
+  /// Returns [Result] containing either list of [{{DataType}}] on success
+  /// or [AppFailure] on error.
+  Future<Result<List<{{DataType}}>>>> list{{Entity}}({
+    {{Entity}}Filter? filter,
+  });
+}

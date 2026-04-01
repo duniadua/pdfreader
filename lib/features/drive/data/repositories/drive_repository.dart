@@ -2,14 +2,21 @@ import 'dart:typed_data';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../models/drive_file.dart';
+import '../drive_file_cache.dart';
 
 part 'drive_repository.freezed.dart';
 
 /// Result type for repository operations
 @freezed
 class DriveResult<T> with _$DriveResult {
-  const factory DriveResult.success(T data) = DriveSuccess<T>;
-  const factory DriveResult.failure(DriveFailure failure) = DriveFailureResult<T>;
+  const factory DriveResult.success(
+    T data, {
+
+    /// Indicates if the data is from cache
+    @Default(false) bool isFromCache,
+  }) = DriveSuccess<T>;
+  const factory DriveResult.failure(DriveFailure failure) =
+      DriveFailureResult<T>;
 }
 
 /// Drive-specific failures
@@ -17,7 +24,8 @@ class DriveResult<T> with _$DriveResult {
 class DriveFailure with _$DriveFailure {
   const factory DriveFailure.notAuthenticated() = DriveNotAuthenticated;
   const factory DriveFailure.networkError(String message) = DriveNetworkError;
-  const factory DriveFailure.downloadFailed(String message) = DriveDownloadFailed;
+  const factory DriveFailure.downloadFailed(String message) =
+      DriveDownloadFailed;
   const factory DriveFailure.unknown(String message) = DriveUnknown;
 }
 
@@ -44,7 +52,16 @@ abstract class DriveRepository {
   });
 
   /// List all PDF files from Google Drive
-  Future<DriveResult<List<DriveFileModel>>> getPdfFiles();
+  /// Use [strategy] to control cache behavior
+  Future<DriveResult<List<DriveFileModel>>> getPdfFiles([
+    DriveCacheStrategy strategy = DriveCacheStrategy.cacheFirst,
+  ]);
+
+  /// Refresh PDF files from Google Drive (force fetch from API)
+  Future<DriveResult<List<DriveFileModel>>> refreshPdfFiles();
+
+  /// Clear the Drive file cache
+  Future<void> clearCache();
 
   /// Download a PDF file from Google Drive
   /// Returns the local path where the file was saved

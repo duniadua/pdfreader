@@ -32,12 +32,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   void initState() {
     super.initState();
     _textController = TextEditingController();
-    _scrollController = ScrollController()
-      ..addListener(_onScrollChanged);
-    // Auto-extract text when panel opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).extractPdfText(widget.pdfPath);
-    });
+    _scrollController = ScrollController()..addListener(_onScrollChanged);
+    // Note: Text extraction is now triggered on-demand when user taps Quick Actions
+    // This avoids race conditions with provider state initialization
   }
 
   @override
@@ -50,7 +47,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   }
 
   void _onScrollChanged() {
-    final scrolledToTop = _scrollController.position.minScrollExtent >= _scrollController.offset - 10;
+    final scrolledToTop =
+        _scrollController.position.minScrollExtent >=
+        _scrollController.offset - 10;
     if (_isScrolledToTop != scrolledToTop) {
       setState(() => _isScrolledToTop = scrolledToTop);
     }
@@ -76,10 +75,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
         children: [
           _buildHeader(context, chatState),
           _buildQuickActions(context, chatState),
-          if (chatState.isExtractingText) _buildExtractionProgress(context, chatState),
-          Expanded(
-            child: _buildMessagesList(context, chatState),
-          ),
+          if (chatState.isExtractingText)
+            _buildExtractionProgress(context, chatState),
+          Expanded(child: _buildMessagesList(context, chatState)),
           _buildInputArea(context, chatState),
         ],
       ),
@@ -92,9 +90,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withValues(alpha: 0.2),
-          ),
+          bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
@@ -129,10 +125,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
           Expanded(
             child: Text(
               widget.pdfTitle,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -141,7 +134,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
               onPressed: () {
-                ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).clearChat();
+                ref
+                    .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+                    .clearChat();
               },
               tooltip: 'Clear chat',
               visualDensity: VisualDensity.compact,
@@ -149,7 +144,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
           IconButton(
             icon: const Icon(Icons.close, size: 20),
             onPressed: () {
-              ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).closePanel();
+              ref
+                  .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+                  .closePanel();
               Navigator.of(context).pop();
             },
             tooltip: 'Close',
@@ -175,7 +172,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
             label: 'Summary',
             isProcessing: isProcessing,
             onTap: () {
-              ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).generateSummary();
+              ref
+                  .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+                  .generateSummary();
             },
           ),
           _QuickActionChip(
@@ -183,7 +182,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
             label: 'Key Points',
             isProcessing: isProcessing,
             onTap: () {
-              ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).extractKeyPoints();
+              ref
+                  .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+                  .extractKeyPoints();
             },
           ),
         ],
@@ -192,9 +193,13 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   }
 
   /// Build text extraction progress indicator
-  Widget _buildExtractionProgress(BuildContext context, PdfChatState chatState) {
+  Widget _buildExtractionProgress(
+    BuildContext context,
+    PdfChatState chatState,
+  ) {
     final progress = chatState.maybeWhen(
-      visible: (_, __, ___, extractProgress, _____, ______) => extractProgress ?? 0.0,
+      visible: (_, __, ___, extractProgress, _____, ______, _______) =>
+          extractProgress ?? 0.0,
       orElse: () => 0.0,
     );
 
@@ -207,16 +212,16 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
               SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, value: progress),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: progress,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Extracting text from PDF... ${(progress * 100).round()}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ),
             ],
@@ -236,7 +241,9 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   Widget _buildMessagesList(BuildContext context, PdfChatState chatState) {
     final messages = chatState.messages;
 
-    if (messages.isEmpty && !chatState.isLoading && !chatState.isExtractingText) {
+    if (messages.isEmpty &&
+        !chatState.isLoading &&
+        !chatState.isExtractingText) {
       return _buildEmptyState(context);
     }
 
@@ -264,10 +271,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
                 SizedBox(width: 12),
                 Text(
                   'AI is thinking...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -300,17 +304,14 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
             const SizedBox(height: 16),
             Text(
               'Ask anything about this PDF',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               'Try quick actions above or type your own question',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -328,9 +329,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: Colors.grey.withValues(alpha: 0.2),
-          ),
+          top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
       ),
       child: SafeArea(
@@ -373,11 +372,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
                 customBorder: const CircleBorder(),
                 child: const Padding(
                   padding: EdgeInsets.all(10),
-                  child: Icon(
-                    Icons.send,
-                    size: 20,
-                    color: Colors.white,
-                  ),
+                  child: Icon(Icons.send, size: 20, color: Colors.white),
                 ),
               ),
             ),

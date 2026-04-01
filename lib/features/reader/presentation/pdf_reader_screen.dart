@@ -6,6 +6,9 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sync_pdf;
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:pdf_reader_app/features/auth/presentation/providers/auth_notifier.dart'
+    as auth;
+
 import '../../../../core/data/models/pdf_document.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -107,7 +110,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               color: pdf.isFavorite ? AppTheme.primary : null,
             ),
             onPressed: () {
-              ref.read(pdfReaderNotifierProvider(widget.pdfId).notifier).toggleFavorite();
+              ref
+                  .read(pdfReaderNotifierProvider(widget.pdfId).notifier)
+                  .toggleFavorite();
             },
             tooltip: 'Bookmark',
           ),
@@ -152,50 +157,48 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   /// Build body based on PDF reader state
   Widget _buildBody(PdfReaderState state) {
     return state.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
       loaded: (pdf) {
         // Initialize page tracking from PDF
         _totalPages = pdf.totalPages;
         _currentPage = pdf.progress?.currentPage ?? 1;
 
         return Stack(
-        children: [
-          // PDF Viewer with rotation support
-          Transform.rotate(
-            angle: _rotationCount * 90 * 3.14159 / 180,
-            child: SfPdfViewer.file(
-              File(pdf.filePath),
-              key: _pdfViewerKey,
-              controller: _pdfViewerController,
-              onPageChanged: (pageDetails) {
-                ref.read(pdfReaderNotifierProvider(widget.pdfId).notifier).onPageChanged(pageDetails.newPageNumber);
-                // Update local state for page indicator
-                if (mounted) {
-                  setState(() {
-                    _currentPage = pageDetails.newPageNumber;
-                    _totalPages = _pdfViewerController.pageCount;
-                  });
-                }
-              },
-              canShowScrollHead: true,
-              canShowScrollStatus: true,
-              pageSpacing: 4,
-              initialPageNumber: pdf.progress?.currentPage ?? 1,
+          children: [
+            // PDF Viewer with rotation support
+            Transform.rotate(
+              angle: _rotationCount * 90 * 3.14159 / 180,
+              child: SfPdfViewer.file(
+                File(pdf.filePath),
+                key: _pdfViewerKey,
+                controller: _pdfViewerController,
+                onPageChanged: (pageDetails) {
+                  ref
+                      .read(pdfReaderNotifierProvider(widget.pdfId).notifier)
+                      .onPageChanged(pageDetails.newPageNumber);
+                  // Update local state for page indicator
+                  if (mounted) {
+                    setState(() {
+                      _currentPage = pageDetails.newPageNumber;
+                      _totalPages = _pdfViewerController.pageCount;
+                    });
+                  }
+                },
+                canShowScrollHead: true,
+                canShowScrollStatus: true,
+                pageSpacing: 4,
+                initialPageNumber: pdf.progress?.currentPage ?? 1,
+              ),
             ),
-          ),
-          // Page indicator overlay
-          Positioned(
-            bottom: 160,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _buildPageIndicator(pdf),
+            // Page indicator overlay
+            Positioned(
+              bottom: 160,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildPageIndicator(pdf)),
             ),
-          ),
-        ],
-      ); // End Stack
+          ],
+        ); // End Stack
       }, // End loaded callback
       notFound: () => _buildErrorView(
         icon: Icons.search_off,
@@ -258,29 +261,19 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(icon, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text(title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+            ElevatedButton(onPressed: onAction, child: Text(actionLabel)),
           ],
         ),
       ),
@@ -294,9 +287,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.05),
-            ),
+            top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
           ),
         ),
         child: SafeArea(
@@ -317,7 +308,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   /// Build page scrubber slider
   Widget _buildPageScrubber(PdfDocument pdf) {
-    final scrollPosition = _totalPages > 0 ? (_currentPage - 1) / _totalPages : 0.0;
+    final scrollPosition = _totalPages > 0
+        ? (_currentPage - 1) / _totalPages
+        : 0.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -371,10 +364,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
           }),
           _buildToolbarItem(Icons.share, 'Share', () {
             final state = ref.read(pdfReaderNotifierProvider(widget.pdfId));
-            state.maybeWhen(
-              loaded: (pdf) => _sharePdf(pdf),
-              orElse: () {},
-            );
+            state.maybeWhen(loaded: (pdf) => _sharePdf(pdf), orElse: () {});
           }),
         ],
       ),
@@ -394,14 +384,18 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
             Icon(
               icon,
               size: 24,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 fontSize: 9,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 letterSpacing: -0.5,
               ),
             ),
@@ -450,7 +444,10 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                   children: [
                     const Text(
                       'Table of Contents',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const Spacer(),
                     IconButton(
@@ -491,8 +488,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
           final File file = File(pdf.filePath);
           final bytes = await file.readAsBytes();
           // Use the factory constructor correctly
-          final sync_pdf.PdfDocument document =
-              sync_pdf.PdfDocument(inputBytes: bytes);
+          final sync_pdf.PdfDocument document = sync_pdf.PdfDocument(
+            inputBytes: bytes,
+          );
           final sync_pdf.PdfBookmarkBase bookmark = document.bookmarks;
           final bookmarks = _parseBookmarks(bookmark, document);
           if (mounted) {
@@ -533,12 +531,13 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
         pageNumber = 1;
       }
 
-      result.add(_PdfBookmark(
-        title: item.title,
-        pageNumber: pageNumber,
-        children:
-            item.count > 0 ? _parseBookmarks(item, document) : [],
-      ));
+      result.add(
+        _PdfBookmark(
+          title: item.title,
+          pageNumber: pageNumber,
+          children: item.count > 0 ? _parseBookmarks(item, document) : [],
+        ),
+      );
     }
     return result;
   }
@@ -559,41 +558,47 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
             builder: (context, setDialogState) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.brightness_6,
-                  size: 48,
-                  color: Colors.grey.shade400,
-                ),
+                Icon(Icons.brightness_6, size: 48, color: Colors.grey.shade400),
                 const SizedBox(height: 16),
                 SliderTheme(
                   data: SliderThemeData(
                     trackHeight: 3,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 12,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 20,
+                    ),
                   ),
                   child: Slider(
                     value: _brightness,
                     onChanged: (value) async {
                       setDialogState(() => _brightness = value);
-                      await ScreenBrightness.instance.setApplicationScreenBrightness(value);
+                      await ScreenBrightness.instance
+                          .setApplicationScreenBrightness(value);
                       // Track brightness change
                       final level = value < 0.2
                           ? 'min'
                           : value < 0.4
-                              ? 'low'
-                              : value < 0.6
-                                  ? 'medium'
-                                  : value < 0.8
-                                      ? 'high'
-                                      : 'max';
-                      AnalyticsService.instance.trackBrightnessChange(level: level);
+                          ? 'low'
+                          : value < 0.6
+                          ? 'medium'
+                          : value < 0.8
+                          ? 'high'
+                          : 'max';
+                      AnalyticsService.instance.trackBrightnessChange(
+                        level: level,
+                      );
                     },
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${(_brightness * 100).round()}%',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -601,7 +606,8 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await ScreenBrightness.instance.resetApplicationScreenBrightness();
+                await ScreenBrightness.instance
+                    .resetApplicationScreenBrightness();
                 if (mounted) Navigator.pop(context);
               },
               child: const Text('Reset'),
@@ -714,17 +720,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           maxLines: maxLines,
           overflow: TextOverflow.ellipsis,
         ),
@@ -741,18 +741,17 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
     final file = File(pdf.filePath);
     if (!await file.exists()) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File not found')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('File not found')));
       return;
     }
 
     try {
       // Use the non-deprecated Share.shareXFiles
-      await Share.shareXFiles(
-        [XFile(file.path, name: pdf.title, mimeType: 'application/pdf')],
-        subject: pdf.title,
-      );
+      await Share.shareXFiles([
+        XFile(file.path, name: pdf.title, mimeType: 'application/pdf'),
+      ], subject: pdf.title);
       // Track share
       AnalyticsService.instance.trackPdfShare(
         pdfId: pdf.id,
@@ -760,22 +759,55 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to share: $e')));
     }
   }
 
   /// Show AI chat panel for PDF interaction
   Future<void> _showChatPanel(PdfDocument pdf) async {
-    // Open the chat panel state
-    ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).openPanel();
+    AppLogger.i('=== _showChatPanel called ===');
+    AppLogger.i('PDF title: ${pdf.title}');
+    AppLogger.i('widget.pdfId: ${widget.pdfId}');
+    AppLogger.i('pdf.id: ${pdf.id}');
+    AppLogger.i('pdf.filePath: ${pdf.filePath}');
+    AppLogger.i('IDs match: ${widget.pdfId == pdf.id}');
+    AppLogger.i('Provider ID: pdfChatNotifierProvider(${widget.pdfId})');
 
-    // Initialize with PDF
-    await ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).initializeWithPdf(pdf);
+    // Check if user is authenticated
+    final authState = ref.read(auth.authNotifierProvider);
+    final isAuthenticated = authState.maybeWhen(
+      authenticated: (_) => true,
+      orElse: () => false,
+    );
+
+    if (!isAuthenticated) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in with Google to use AI features'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // Initialize with PDF FIRST (before opening panel)
+    AppLogger.i('Calling initializeWithPdf()...');
+    await ref
+        .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+        .initializeWithPdf(pdf);
+    AppLogger.i('✅ initializeWithPdf completed');
+
+    // Open the chat panel state AFTER PDF is initialized
+    AppLogger.i('Calling openPanel()...');
+    ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).openPanel();
+    AppLogger.i('✅ openPanel completed');
 
     if (!mounted) return;
 
+    AppLogger.i('Showing modal bottom sheet...');
     // Show the modal bottom sheet
     showModalBottomSheet(
       context: context,
@@ -807,7 +839,11 @@ class _PdfBookmark {
   final int pageNumber;
   final List<_PdfBookmark> children;
 
-  _PdfBookmark({required this.title, required this.pageNumber, this.children = const []});
+  _PdfBookmark({
+    required this.title,
+    required this.pageNumber,
+    this.children = const [],
+  });
 }
 
 /// Bookmark item widget for table of contents
@@ -834,7 +870,9 @@ class _BookmarkItem extends StatelessWidget {
               fontWeight: depth == 0 ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
-          leading: depth == 0 ? const Icon(Icons.bookmark_border, size: 20) : null,
+          leading: depth == 0
+              ? const Icon(Icons.bookmark_border, size: 20)
+              : null,
           contentPadding: EdgeInsets.only(
             left: 16.0 + (depth * 20.0),
             right: 16.0,
@@ -842,11 +880,10 @@ class _BookmarkItem extends StatelessWidget {
           onTap: () => onTap(bookmark.pageNumber),
         ),
         if (bookmark.children.isNotEmpty)
-          ...bookmark.children.map((child) => _BookmarkItem(
-                bookmark: child,
-                onTap: onTap,
-                depth: depth + 1,
-              )),
+          ...bookmark.children.map(
+            (child) =>
+                _BookmarkItem(bookmark: child, onTap: onTap, depth: depth + 1),
+          ),
       ],
     );
   }

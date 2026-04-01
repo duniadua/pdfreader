@@ -10,7 +10,12 @@ class AppConstants {
   static const Color backgroundDark = Color(0xFF101622);
 
   // Navigation
-  static const List<String> bottomNavItems = ['Library', 'Favorites', 'Timeline', 'Cloud'];
+  static const List<String> bottomNavItems = [
+    'Library',
+    'Favorites',
+    'Timeline',
+    'Cloud',
+  ];
 
   // Storage Keys
   static const String keyRecentPdfs = 'recent_pdfs';
@@ -24,7 +29,8 @@ class AppConstants {
   static const double defaultBrightness = 0.75;
   static const bool defaultDarkMode = false;
   static const bool defaultAutoCrop = true;
-  static const ScrollDirection defaultScrollDirection = ScrollDirection.vertical;
+  static const ScrollDirection defaultScrollDirection =
+      ScrollDirection.vertical;
 
   // File Filters
   static const List<String> supportedPdfExtensions = ['pdf'];

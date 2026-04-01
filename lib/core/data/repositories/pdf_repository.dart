@@ -14,10 +14,7 @@ abstract class PdfRepository {
   Future<Result<List<PdfDocument>>> getAllPdfs();
 
   /// Get paginated PDF documents with offset
-  Future<Result<PaginatedPdfs>> getPagedPdfs({
-    int offset = 0,
-    int limit = 20,
-  });
+  Future<Result<PaginatedPdfs>> getPagedPdfs({int offset = 0, int limit = 20});
 
   /// Get a PDF by ID
   Future<Result<PdfDocument?>> getPdfById(String id);
@@ -41,13 +38,20 @@ abstract class PdfRepository {
   Future<Result<PdfDocument>> toggleFavorite(String id);
 
   /// Update reading progress
-  Future<Result<void>> updateProgress(String documentId, int page, int scrollOffset);
+  Future<Result<void>> updateProgress(
+    String documentId,
+    int page,
+    int scrollOffset,
+  );
 
   /// Generate and save thumbnail for a PDF
   Future<Result<String?>> generateThumbnail(String pdfId);
 
   /// Update thumbnail path for a PDF
-  Future<Result<PdfDocument>> updateThumbnail(String pdfId, String? thumbnailPath);
+  Future<Result<PdfDocument>> updateThumbnail(
+    String pdfId,
+    String? thumbnailPath,
+  );
 }
 
 /// Paginated PDFs result
@@ -84,7 +88,8 @@ class SharedPreferencesPdfRepository implements PdfRepository {
   SharedPreferencesPdfRepository({
     required SharedPreferences prefs,
     ThumbnailService? thumbnailService,
-  })  : _prefs = prefs, _thumbnailService = thumbnailService ?? ThumbnailService();
+  }) : _prefs = prefs,
+       _thumbnailService = thumbnailService ?? ThumbnailService();
 
   final SharedPreferences _prefs;
   final ThumbnailService _thumbnailService;
@@ -144,13 +149,15 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       final end = (offset + limit).clamp(0, pdfs.length);
       final pagePdfs = pdfs.skip(offset).take(end - offset).toList();
 
-      return Result.success(PaginatedPdfs(
-        pdfs: pagePdfs,
-        offset: offset,
-        limit: limit,
-        hasMore: hasMore,
-        totalCount: pdfs.length,
-      ));
+      return Result.success(
+        PaginatedPdfs(
+          pdfs: pagePdfs,
+          offset: offset,
+          limit: limit,
+          hasMore: hasMore,
+          totalCount: pdfs.length,
+        ),
+      );
     } catch (e, st) {
       AppLogger.e('Failed to get paginated PDFs', e, st);
       return Result.failure(const StorageException('Failed to load PDFs'), st);
@@ -181,7 +188,10 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(recent);
     } catch (e, st) {
       AppLogger.e('Failed to get recent PDFs', e, st);
-      return Result.failure(const StorageException('Failed to load recent PDFs'), st);
+      return Result.failure(
+        const StorageException('Failed to load recent PDFs'),
+        st,
+      );
     }
   }
 
@@ -194,7 +204,10 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(favorites);
     } catch (e, st) {
       AppLogger.e('Failed to get favorite PDFs', e, st);
-      return Result.failure(const StorageException('Failed to load favorites'), st);
+      return Result.failure(
+        const StorageException('Failed to load favorites'),
+        st,
+      );
     }
   }
 
@@ -224,9 +237,7 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       final pdfs = _getPdfs();
       final index = pdfs.indexWhere((p) => p.id == document.id);
       if (index == -1) {
-        return Result.failure(
-          const StorageException('PDF not found'),
-        );
+        return Result.failure(const StorageException('PDF not found'));
       }
       pdfs[index] = document;
       await _savePdfs(pdfs);
@@ -245,9 +256,7 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       final initialLength = pdfs.length;
       pdfs.removeWhere((p) => p.id == id);
       if (pdfs.length == initialLength) {
-        return Result.failure(
-          const StorageException('PDF not found'),
-        );
+        return Result.failure(const StorageException('PDF not found'));
       }
       await _savePdfs(pdfs);
       AppLogger.i('Deleted PDF: $id');
@@ -272,19 +281,24 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       });
     } catch (e, st) {
       AppLogger.e('Failed to toggle favorite', e, st);
-      return Result.failure(const StorageException('Failed to toggle favorite'), st);
+      return Result.failure(
+        const StorageException('Failed to toggle favorite'),
+        st,
+      );
     }
   }
 
   @override
-  Future<Result<void>> updateProgress(String documentId, int page, int scrollOffset) async {
+  Future<Result<void>> updateProgress(
+    String documentId,
+    int page,
+    int scrollOffset,
+  ) async {
     try {
       final pdfs = _getPdfs();
       final index = pdfs.indexWhere((p) => p.id == documentId);
       if (index == -1) {
-        return Result.failure(
-          const StorageException('PDF not found'),
-        );
+        return Result.failure(const StorageException('PDF not found'));
       }
       final pdf = pdfs[index];
       final progress = ReadingProgress(
@@ -301,7 +315,10 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(null);
     } catch (e, st) {
       AppLogger.e('Failed to update progress', e, st);
-      return Result.failure(const StorageException('Failed to update progress'), st);
+      return Result.failure(
+        const StorageException('Failed to update progress'),
+        st,
+      );
     }
   }
 
@@ -311,14 +328,14 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       final pdfs = _getPdfs();
       final index = pdfs.indexWhere((p) => p.id == pdfId);
       if (index == -1) {
-        return Result.failure(
-          const StorageException('PDF not found'),
-        );
+        return Result.failure(const StorageException('PDF not found'));
       }
       final pdf = pdfs[index];
 
       // Generate thumbnail
-      final thumbnailPath = await _thumbnailService.generateThumbnail(pdf.filePath);
+      final thumbnailPath = await _thumbnailService.generateThumbnail(
+        pdf.filePath,
+      );
       if (thumbnailPath != null) {
         // Update PDF with thumbnail path
         pdfs[index] = pdf.copyWith(thumbnailPath: thumbnailPath);
@@ -328,19 +345,23 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(null); // Thumbnail generation failed but no error
     } catch (e, st) {
       AppLogger.e('Failed to generate thumbnail', e, st);
-      return Result.failure(const StorageException('Failed to generate thumbnail'), st);
+      return Result.failure(
+        const StorageException('Failed to generate thumbnail'),
+        st,
+      );
     }
   }
 
   @override
-  Future<Result<PdfDocument>> updateThumbnail(String pdfId, String? thumbnailPath) async {
+  Future<Result<PdfDocument>> updateThumbnail(
+    String pdfId,
+    String? thumbnailPath,
+  ) async {
     try {
       final pdfs = _getPdfs();
       final index = pdfs.indexWhere((p) => p.id == pdfId);
       if (index == -1) {
-        return Result.failure(
-          const StorageException('PDF not found'),
-        );
+        return Result.failure(const StorageException('PDF not found'));
       }
       final pdf = pdfs[index];
       final updated = pdf.copyWith(thumbnailPath: thumbnailPath);
@@ -349,7 +370,10 @@ class SharedPreferencesPdfRepository implements PdfRepository {
       return Result.success(updated);
     } catch (e, st) {
       AppLogger.e('Failed to update thumbnail', e, st);
-      return Result.failure(const StorageException('Failed to update thumbnail'), st);
+      return Result.failure(
+        const StorageException('Failed to update thumbnail'),
+        st,
+      );
     }
   }
 }

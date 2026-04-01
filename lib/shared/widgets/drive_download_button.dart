@@ -32,11 +32,7 @@ class DriveDownloadButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.download,
-              color: AppTheme.primary,
-              size: 16,
-            ),
+            Icon(Icons.download, color: AppTheme.primary, size: 16),
             const SizedBox(width: 4),
             Text(
               'Download',

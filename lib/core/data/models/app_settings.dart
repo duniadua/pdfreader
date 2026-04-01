@@ -25,12 +25,17 @@ class AppSettings {
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     return AppSettings(
       darkMode: json['darkMode'] as bool? ?? AppConstants.defaultDarkMode,
-      fontSize: (json['fontSize'] as num?)?.toDouble() ?? AppConstants.defaultFontSize,
+      fontSize:
+          (json['fontSize'] as num?)?.toDouble() ??
+          AppConstants.defaultFontSize,
       scrollDirection: json['scrollDirection'] == 'horizontal'
           ? ScrollDirection.horizontal
           : ScrollDirection.vertical,
-      autoCropMargins: json['autoCropMargins'] as bool? ?? AppConstants.defaultAutoCrop,
-      brightness: (json['brightness'] as num?)?.toDouble() ?? AppConstants.defaultBrightness,
+      autoCropMargins:
+          json['autoCropMargins'] as bool? ?? AppConstants.defaultAutoCrop,
+      brightness:
+          (json['brightness'] as num?)?.toDouble() ??
+          AppConstants.defaultBrightness,
     );
   }
 
@@ -39,7 +44,9 @@ class AppSettings {
     return {
       'darkMode': darkMode,
       'fontSize': fontSize,
-      'scrollDirection': scrollDirection == ScrollDirection.horizontal ? 'horizontal' : 'vertical',
+      'scrollDirection': scrollDirection == ScrollDirection.horizontal
+          ? 'horizontal'
+          : 'vertical',
       'autoCropMargins': autoCropMargins,
       'brightness': brightness,
     };

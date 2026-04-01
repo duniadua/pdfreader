@@ -8,11 +8,7 @@ void main() {
   testWidgets('should toggle dark mode on settings screen', (tester) async {
     // Arrange
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
-          home: SettingsScreen(),
-        ),
-      ),
+      const ProviderScope(child: MaterialApp(home: SettingsScreen())),
     );
 
     // Act - tap dark mode switch twice
@@ -35,11 +31,7 @@ void main() {
 
   testWidgets('should persist dark mode setting', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
-          home: SettingsScreen(),
-        ),
-      ),
+      const ProviderScope(child: MaterialApp(home: SettingsScreen())),
     );
 
     // Act

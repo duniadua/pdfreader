@@ -1,0 +1,103 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+
+{{imports}}
+
+@GenerateMocks([{{mock_classes}}])
+import '{{target_filename}}_test.mocks.dart';
+
+void main() {
+  late {{mock_declarations}};
+  late ProviderContainer container;
+
+  setUp(() {
+    {{mock_initialization}}
+
+    container = ProviderContainer(
+      overrides: [
+        {{provider_overrides}}
+      ],
+    );
+  });
+
+  tearDown(() {
+    container.dispose();
+  });
+
+  group('{{NotifierName}}', () {
+    test('should return initial state when created', () {
+      // Arrange
+      const initialState = {{StateType}}.initial();
+
+      // Act
+      final state = container.read({{provider}});
+
+      // Assert
+      expect(state, initialState);
+    });
+
+    test('should {{action_description}} successfully', () async {
+      // Arrange
+      {{arrange_section}}
+
+      // Act
+      await container.read({{provider}}.notifier).{{method_name}}({{method_params}});
+
+      // Assert
+      {{assert_section}}
+    });
+
+    test('should set loading state during {{action_description}}', () async {
+      // Arrange
+      {{arrange_section}}
+      var loadingStates = <bool>[];
+      container.listen({{provider}}, (previous, next) {
+        loadingStates.add(next.isLoading);
+      });
+
+      // Act
+      final future = container.read({{provider}}.notifier).{{method_name}}({{method_params}});
+
+      // Assert
+      expect(loadingStates, contains(true));
+
+      // Wait for completion
+      await future;
+    });
+
+    test('should handle error when {{action_description}} fails', () async {
+      // Arrange
+      {{error_arrange}}
+
+      // Act
+      await container.read({{provider}}.notifier).{{method_name}}({{method_params}});
+
+      // Assert
+      final state = container.read({{provider}});
+      expect(state.isLoading, false);
+      expect(state.failure, isNotNull);
+    });
+
+    test('should reset error when retry succeeds', () async {
+      // Arrange - First call fails
+      {{error_arrange}}
+
+      // Act - First call fails
+      await container.read({{provider}}.notifier).{{method_name}}({{method_params}});
+
+      // Arrange - Second call succeeds
+      {{success_arrange}}
+
+      // Act - Second call succeeds
+      await container.read({{provider}}.notifier).{{method_name}}({{method_params}});
+
+      // Assert - Error is cleared
+      final state = container.read({{provider}});
+      expect(state.failure, isNull);
+    });
+
+    {{additional_tests}}
+  });
+}

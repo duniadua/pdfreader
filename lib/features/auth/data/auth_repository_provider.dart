@@ -18,10 +18,7 @@ FirebaseAuth firebaseAuth(Ref ref) {
 @riverpod
 GoogleSignIn googleSignIn(Ref ref) {
   return GoogleSignIn.standard(
-    scopes: <String>[
-      'email',
-      'https://www.googleapis.com/auth/drive.readonly',
-    ],
+    scopes: <String>['email', 'https://www.googleapis.com/auth/drive.readonly'],
   );
 }
 

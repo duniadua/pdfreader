@@ -23,9 +23,8 @@ abstract class SettingsRepository {
 
 /// Implementation of SettingsRepository
 class SharedPreferencesSettingsRepository implements SettingsRepository {
-  const SharedPreferencesSettingsRepository({
-    required SharedPreferences prefs,
-  }) : _prefs = prefs;
+  const SharedPreferencesSettingsRepository({required SharedPreferences prefs})
+    : _prefs = prefs;
 
   final SharedPreferences _prefs;
 
@@ -40,12 +39,15 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
     try {
       final settings = AppSettings(
         darkMode: _prefs.getBool(_darkModeKey) ?? AppConstants.defaultDarkMode,
-        fontSize: _prefs.getDouble(_fontSizeKey) ?? AppConstants.defaultFontSize,
+        fontSize:
+            _prefs.getDouble(_fontSizeKey) ?? AppConstants.defaultFontSize,
         scrollDirection: _prefs.getString(_scrollDirectionKey) == 'horizontal'
             ? ScrollDirection.horizontal
             : ScrollDirection.vertical,
-        autoCropMargins: _prefs.getBool(_autoCropKey) ?? AppConstants.defaultAutoCrop,
-        brightness: _prefs.getDouble(_brightnessKey) ?? AppConstants.defaultBrightness,
+        autoCropMargins:
+            _prefs.getBool(_autoCropKey) ?? AppConstants.defaultAutoCrop,
+        brightness:
+            _prefs.getDouble(_brightnessKey) ?? AppConstants.defaultBrightness,
       );
       return Result.success(settings);
     } catch (e, st) {
@@ -64,7 +66,9 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
       await _prefs.setDouble(_fontSizeKey, settings.fontSize);
       await _prefs.setString(
         _scrollDirectionKey,
-        settings.scrollDirection == ScrollDirection.horizontal ? 'horizontal' : 'vertical',
+        settings.scrollDirection == ScrollDirection.horizontal
+            ? 'horizontal'
+            : 'vertical',
       );
       await _prefs.setBool(_autoCropKey, settings.autoCropMargins);
       await _prefs.setDouble(_brightnessKey, settings.brightness);
@@ -100,12 +104,15 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
       const Duration(seconds: 1),
       (_) => AppSettings(
         darkMode: _prefs.getBool(_darkModeKey) ?? AppConstants.defaultDarkMode,
-        fontSize: _prefs.getDouble(_fontSizeKey) ?? AppConstants.defaultFontSize,
+        fontSize:
+            _prefs.getDouble(_fontSizeKey) ?? AppConstants.defaultFontSize,
         scrollDirection: _prefs.getString(_scrollDirectionKey) == 'horizontal'
             ? ScrollDirection.horizontal
             : ScrollDirection.vertical,
-        autoCropMargins: _prefs.getBool(_autoCropKey) ?? AppConstants.defaultAutoCrop,
-        brightness: _prefs.getDouble(_brightnessKey) ?? AppConstants.defaultBrightness,
+        autoCropMargins:
+            _prefs.getBool(_autoCropKey) ?? AppConstants.defaultAutoCrop,
+        brightness:
+            _prefs.getDouble(_brightnessKey) ?? AppConstants.defaultBrightness,
       ),
     ).distinct();
   }

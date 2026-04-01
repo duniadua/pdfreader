@@ -1,0 +1,45 @@
+/// Repository implementation for {{FeatureName}}
+///
+/// Implements [{{FeatureName}}Repository] interface.
+/// TODO: Add data source dependencies (Hive, API, etc.)
+class {{FeatureName}}RepositoryImpl implements {{FeatureName}}Repository {
+  const {{FeatureName}}RepositoryImpl();
+
+  @override
+  Future<Result<{{DataType}}>> get{{Entity}}(String id) {
+    // TODO: Implement get{{Entity}} logic
+    // - Query data source (Hive, API, etc.)
+    // - Handle errors and wrap in Result
+    // - Return Result.success(data) or Result.failure(error)
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Result<void>> save{{Entity}}({{DataType}} data) {
+    // TODO: Implement save{{Entity}} logic
+    // - Validate data
+    // - Save to data source
+    // - Handle errors and wrap in Result
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Result<void>> delete{{Entity}}(String id) {
+    // TODO: Implement delete{{Entity}} logic
+    // - Validate id
+    // - Delete from data source
+    // - Handle errors and wrap in Result
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Result<List<{{DataType}}>>>> list{{Entity}}({
+    {{Entity}}Filter? filter,
+  }) {
+    // TODO: Implement list{{Entity}} logic
+    // - Apply filter if provided
+    // - Query data source
+    // - Handle errors and wrap in Result
+    throw UnimplementedError();
+  }
+}

@@ -1,0 +1,22 @@
+/// Use case for {{action}}
+///
+/// Encapsulates business logic for {{action}} {{entity}}.
+/// Follows Clean Architecture principles from `.claude/rules/architecture.md`.
+class {{Action}}{{Entity}}UseCase {
+  const {{Action}}{{Entity}}UseCase(this._repository);
+
+  final {{FeatureName}}Repository _repository;
+
+  /// Executes the use case
+  ///
+  /// Returns [Result] containing either [{{ReturnType}}] on success
+  /// or [AppFailure] on error.
+  Future<Result<{{ReturnType}}>>> call({{ParamsType}} params) {
+    // TODO: Implement use case logic
+    // - Validate input parameters
+    // - Call repository methods
+    // - Transform data if needed
+    // - Handle errors and wrap in Result
+    throw UnimplementedError();
+  }
+}

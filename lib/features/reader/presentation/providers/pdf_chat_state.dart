@@ -97,49 +97,75 @@ extension PdfChatStateX on PdfChatState {
   bool get isVisible => this is _PdfChatStateVisible;
 
   /// Check if panel is currently hidden
-  bool get isHidden => this is _PdfChatStateHidden || this is _PdfChatStateInitial;
+  bool get isHidden =>
+      this is _PdfChatStateHidden || this is _PdfChatStateInitial;
 
   /// Returns the messages list if visible, empty list otherwise
   List<ChatMessage> get messages => maybeWhen(
-        visible: (messages, _, _, _, _, _, _) => messages,
-        orElse: () => const [],
-      );
+    visible: (messages, _, _, _, _, _, _) => messages,
+    orElse: () => const [],
+  );
 
   /// Returns whether currently loading if visible
   bool get isLoading => maybeWhen(
-        visible: (_, isLoading, _, _, _, _, _) => isLoading,
-        orElse: () => false,
-      );
+    visible: (_, isLoading, _, _, _, _, _) => isLoading,
+    orElse: () => false,
+  );
 
   /// Returns whether currently extracting text if visible
   bool get isExtractingText => maybeWhen(
-        visible: (_, _, isExtractingText, _, _, _, _) => isExtractingText,
-        orElse: () => false,
-      );
+    visible: (_, _, isExtractingText, _, _, _, _) => isExtractingText,
+    orElse: () => false,
+  );
 
   /// Returns the current error if visible and has error
   String? get error => maybeWhen(
-        visible: (_, _, _, _, error, _, _) => error,
-        orElse: () => null,
-      );
+    visible: (_, _, _, _, error, _, _) => error,
+    orElse: () => null,
+  );
 
   /// Returns the extracted text if available
   String? get extractedText => maybeWhen(
-        visible: (_, _, _, _, _, extractedText, _) => extractedText,
-        orElse: () => null,
-      );
+    visible: (_, _, _, _, _, extractedText, _) => extractedText,
+    orElse: () => null,
+  );
 
   /// Returns the current PDF path if available
   String? get currentPdfPath => maybeWhen(
-        visible: (_, _, _, _, _, _, currentPdfPath) => currentPdfPath,
-        orElse: () => null,
-      );
+    visible: (_, _, _, _, _, _, currentPdfPath) => currentPdfPath,
+    orElse: () => null,
+  );
 
   /// Get visible state data or null if not visible
-  ({List<ChatMessage> messages, bool isLoading, bool isExtractingText, double? extractProgress, String? error, String? extractedText, String? currentPdfPath})? get asVisible {
+  ({
+    List<ChatMessage> messages,
+    bool isLoading,
+    bool isExtractingText,
+    double? extractProgress,
+    String? error,
+    String? extractedText,
+    String? currentPdfPath,
+  })?
+  get asVisible {
     return maybeWhen(
-      visible: (messages, isLoading, isExtractingText, extractProgress, error, extractedText, currentPdfPath) =>
-          (messages: messages, isLoading: isLoading, isExtractingText: isExtractingText, extractProgress: extractProgress, error: error, extractedText: extractedText, currentPdfPath: currentPdfPath),
+      visible:
+          (
+            messages,
+            isLoading,
+            isExtractingText,
+            extractProgress,
+            error,
+            extractedText,
+            currentPdfPath,
+          ) => (
+            messages: messages,
+            isLoading: isLoading,
+            isExtractingText: isExtractingText,
+            extractProgress: extractProgress,
+            error: error,
+            extractedText: extractedText,
+            currentPdfPath: currentPdfPath,
+          ),
       orElse: () => null,
     );
   }

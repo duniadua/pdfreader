@@ -1,0 +1,137 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+{{imports}}
+
+void main() {
+  group('{{WidgetName}}', () {
+    testWidgets('should render without errors', (tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_overrides}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+
+      // Act
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.byType({{WidgetName}}), findsOneWidget);
+    });
+
+    testWidgets('should show loading indicator when loading', (tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_override_with_loading_state}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+
+      // Act
+      await tester.pump();
+
+      // Assert
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('should display content when loaded', (tester) async {
+      // Arrange
+      {{test_data_setup}}
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_override_with_data_state}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+
+      // Act
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.text('{{expected_text}}'), findsOneWidget);
+    });
+
+    testWidgets('should show error message when error occurs', (tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_override_with_error_state}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+
+      // Act
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.textContaining('error'), findsOneWidget);
+    });
+
+    testWidgets('should perform action on {{element}} tap', (tester) async {
+      // Arrange
+      {{action_setup}}
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_overrides}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.{{finder_type}}('{{element_text}}'));
+      await tester.pumpAndSettle();
+
+      // Assert
+      {{action_assertions}}
+    });
+
+    testWidgets('should match golden file', (tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            {{provider_overrides}}
+          ],
+          child: const MaterialApp(
+            home: {{WidgetName}}(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act & Assert
+      await expectLater(
+        find.byType({{WidgetName}}),
+        matchesGoldenFile('goldens/{{widget_filename}}.png'),
+      );
+    });
+
+    {{additional_tests}}
+  });
+}

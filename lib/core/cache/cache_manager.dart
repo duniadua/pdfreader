@@ -34,7 +34,8 @@ class CacheManager {
   final _pendingProgressSaves = <String, Timer>{};
 
   // Callback for saving progress to storage
-  Future<void> Function(String documentId, int page, int scrollOffset)? _progressSaveCallback;
+  Future<void> Function(String documentId, int page, int scrollOffset)?
+  _progressSaveCallback;
 
   void _initializeMetadataCache() {
     _metadataCache = LruCache<String, PdfDocument>(
@@ -54,7 +55,8 @@ class CacheManager {
 
   /// Set the callback for persisting reading progress
   void setProgressSaveCallback(
-    Future<void> Function(String documentId, int page, int scrollOffset) callback,
+    Future<void> Function(String documentId, int page, int scrollOffset)
+    callback,
   ) {
     _progressSaveCallback = callback;
   }

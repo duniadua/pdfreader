@@ -1,3 +1,4 @@
+import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/datasources/local/chat_database.dart';
 import '../../data/datasources/local/chat_session_dao.dart';
@@ -5,8 +6,8 @@ import '../../data/datasources/local/chat_message_dao.dart';
 import '../../data/datasources/local/chat_session_entity.dart';
 import '../../data/datasources/local/chat_message_entity.dart';
 import '../../../core/data/models/pdf_document.dart';
-import '../../utils/result.dart';
-import '../../utils/logger.dart';
+import '../../../core/utils/result.dart';
+import '../../../core/utils/logger.dart';
 
 part 'chat_repository.g.dart';
 
@@ -68,13 +69,29 @@ abstract class ChatRepository {
 
 /// SQLite implementation of ChatRepository
 class SqliteChatRepository implements ChatRepository {
-  final ChatDatabase _database;
-  late final ChatSessionDao _sessionDao;
-  late final ChatMessageDao _messageDao;
+  final ChatDatabase _chatDatabase;
+  ChatSessionDao? _sessionDao;
+  ChatMessageDao? _messageDao;
 
-  SqliteChatRepository({required ChatDatabase database}) : _database = database {
-    _sessionDao = ChatSessionDao(database._database);
-    _messageDao = ChatMessageDao(database._database);
+  SqliteChatRepository({required ChatDatabase database})
+    : _chatDatabase = database;
+
+  /// Initialize the DAOs (must be called after construction)
+  Future<void> _initDaos() async {
+    if (_sessionDao != null && _messageDao != null) {
+      // Already initialized
+      return;
+    }
+    final db = await _chatDatabase.database;
+    _sessionDao = ChatSessionDao(db);
+    _messageDao = ChatMessageDao(db);
+  }
+
+  /// Ensure DAOs are initialized before use
+  Future<void> _ensureInitialized() async {
+    if (_sessionDao == null || _messageDao == null) {
+      await _initDaos();
+    }
   }
 
   @override
@@ -83,8 +100,9 @@ class SqliteChatRepository implements ChatRepository {
     PdfDocument pdf,
   ) async {
     try {
+      await _ensureInitialized();
       // Try to get existing session
-      final existingSession = await _sessionDao.getByPdfId(pdfId);
+      final existingSession = await _sessionDao!.getByPdfId(pdfId);
       if (existingSession != null) {
         return Result.success(existingSession);
       }
@@ -103,7 +121,7 @@ class SqliteChatRepository implements ChatRepository {
         isArchived: false,
       );
 
-      await _sessionDao.insert(session);
+      await _sessionDao!.insert(session);
       AppLogger.i('Created new chat session for PDF: ${pdf.title}');
       return Result.success(session);
     } catch (e, st) {
@@ -115,7 +133,8 @@ class SqliteChatRepository implements ChatRepository {
   @override
   Future<Result<ChatSessionEntity?>> getSessionByPdfId(String pdfId) async {
     try {
-      final session = await _sessionDao.getByPdfId(pdfId);
+      await _ensureInitialized();
+      final session = await _sessionDao!.getByPdfId(pdfId);
       return Result.success(session);
     } catch (e, st) {
       AppLogger.e('Failed to get session by PDF ID', e, st);
@@ -124,9 +143,12 @@ class SqliteChatRepository implements ChatRepository {
   }
 
   @override
-  Future<Result<List<RepositoryChatMessage>>> getMessages(String sessionId) async {
+  Future<Result<List<RepositoryChatMessage>>> getMessages(
+    String sessionId,
+  ) async {
     try {
-      final messageEntities = await _messageDao.getBySessionId(sessionId);
+      await _ensureInitialized();
+      final messageEntities = await _messageDao!.getBySessionId(sessionId);
       final messages = messageEntities.map((entity) {
         return RepositoryChatMessage(
           id: entity.id,
@@ -147,10 +169,11 @@ class SqliteChatRepository implements ChatRepository {
   @override
   Future<Result<ChatMessageEntity>> addMessage(
     String sessionId,
-    ChatMessage message,
+    RepositoryChatMessage message,
   ) async {
     try {
-      final seqNumber = await _messageDao.getNextSequenceNumber(sessionId);
+      await _ensureInitialized();
+      final seqNumber = await _messageDao!.getNextSequenceNumber(sessionId);
       final now = DateTime.now().millisecondsSinceEpoch;
       final entity = ChatMessageEntity(
         id: message.id,
@@ -163,7 +186,7 @@ class SqliteChatRepository implements ChatRepository {
         sequenceNumber: seqNumber,
         createdAt: now,
       );
-      await _messageDao.insert(entity);
+      await _messageDao!.insert(entity);
       return Result.success(entity);
     } catch (e, st) {
       AppLogger.e('Failed to add message to database', e, st);
@@ -178,7 +201,8 @@ class SqliteChatRepository implements ChatRepository {
     int? lastMessageAt,
   }) async {
     try {
-      await _sessionDao.updateMetadata(
+      await _ensureInitialized();
+      await _sessionDao!.updateMetadata(
         sessionId: sessionId,
         messageCount: messageCount,
         lastMessageAt: lastMessageAt,
@@ -191,9 +215,12 @@ class SqliteChatRepository implements ChatRepository {
   }
 
   @override
-  Future<Result<List<ChatSessionEntity>>> getRecentSessions({int limit = 10}) async {
+  Future<Result<List<ChatSessionEntity>>> getRecentSessions({
+    int limit = 10,
+  }) async {
     try {
-      final sessions = await _sessionDao.getRecentSessions(limit: limit);
+      await _ensureInitialized();
+      final sessions = await _sessionDao!.getRecentSessions(limit: limit);
       return Result.success(sessions);
     } catch (e, st) {
       AppLogger.e('Failed to get recent sessions', e, st);
@@ -204,7 +231,7 @@ class SqliteChatRepository implements ChatRepository {
   @override
   Future<Result<void>> deleteSession(String sessionId) async {
     try {
-      await _sessionDao.delete(sessionId);
+      await _sessionDao!.delete(sessionId);
       AppLogger.i('Deleted chat session: $sessionId');
       return Result.success(null);
     } catch (e, st) {
@@ -216,7 +243,8 @@ class SqliteChatRepository implements ChatRepository {
   @override
   Future<Result<void>> archiveSession(String sessionId) async {
     try {
-      await _sessionDao.archive(sessionId);
+      await _ensureInitialized();
+      await _sessionDao!.archive(sessionId);
       AppLogger.i('Archived chat session: $sessionId');
       return Result.success(null);
     } catch (e, st) {
@@ -233,8 +261,6 @@ class SqliteChatRepository implements ChatRepository {
 
 /// Provider for ChatRepository
 @riverpod
-ChatRepository chatRepository(ChatRepositoryRef ref) {
-  return SqliteChatRepository(
-    database: ChatDatabase.instance,
-  );
+ChatRepository chatRepository(Ref ref) {
+  return SqliteChatRepository(database: ChatDatabase.instance);
 }

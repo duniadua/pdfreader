@@ -8,11 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 
 /// Widget displaying a single chat message bubble.
 class ChatMessageBubble extends StatelessWidget {
-  const ChatMessageBubble({
-    super.key,
-    required this.message,
-    this.onCopy,
-  });
+  const ChatMessageBubble({super.key, required this.message, this.onCopy});
 
   final ChatMessage message;
   final VoidCallback? onCopy;
@@ -24,27 +20,33 @@ class ChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Column(
-        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           // Message row
           Row(
-            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isUser) ...[
-                _buildAvatar(context),
-                const SizedBox(width: 8),
-              ],
+              if (!isUser) ...[_buildAvatar(context), const SizedBox(width: 8)],
               Flexible(
                 child: Column(
-                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     // Message bubble
                     Container(
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.75,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: _getBubbleColor(context),
                         borderRadius: _getBorderRadius(isUser),
@@ -62,10 +64,7 @@ class ChatMessageBubble extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isUser) ...[
-                const SizedBox(width: 8),
-                _buildAvatar(context),
-              ],
+              if (isUser) ...[const SizedBox(width: 8), _buildAvatar(context)],
             ],
           ),
           // Timestamp
@@ -73,10 +72,7 @@ class ChatMessageBubble extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Text(
               _formatTime(message.timestamp),
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
             ),
           ),
         ],
@@ -175,18 +171,11 @@ class ChatMessageBubble extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.copy,
-              size: 12,
-              color: Colors.grey.shade500,
-            ),
+            Icon(Icons.copy, size: 12, color: Colors.grey.shade500),
             const SizedBox(width: 4),
             Text(
               'Copy',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
             ),
           ],
         ),
@@ -264,7 +253,9 @@ class _Dot extends StatelessWidget {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: value),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: value),
             shape: BoxShape.circle,
           ),
         );

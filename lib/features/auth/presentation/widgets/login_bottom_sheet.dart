@@ -42,18 +42,9 @@ class _LoginBottomSheet extends ConsumerWidget {
             initial: () => _buildUnauthenticated(context, isDark, ref),
             unauthenticated: () => _buildUnauthenticated(context, isDark, ref),
             loading: () => _buildLoading(context, isDark),
-            authenticated: (user) => _buildAuthenticated(
-              context,
-              isDark,
-              user,
-              ref,
-            ),
-            error: (message) => _buildError(
-              context,
-              isDark,
-              message,
-              ref,
-            ),
+            authenticated: (user) =>
+                _buildAuthenticated(context, isDark, user, ref),
+            error: (message) => _buildError(context, isDark, message, ref),
           ),
         ),
       ),
@@ -218,11 +209,7 @@ class _LoginBottomSheet extends ConsumerWidget {
                     },
                   ),
                 )
-              : Icon(
-                  Icons.person,
-                  size: 40,
-                  color: AppTheme.primary,
-                ),
+              : Icon(Icons.person, size: 40, color: AppTheme.primary),
         ),
         const SizedBox(height: 16),
 
@@ -298,9 +285,7 @@ class _LoginBottomSheet extends ConsumerWidget {
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
-              side: BorderSide(
-                color: Colors.red.withValues(alpha: 0.3),
-              ),
+              side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -315,9 +300,7 @@ class _LoginBottomSheet extends ConsumerWidget {
   Widget _buildLoading(BuildContext context, bool isDark) {
     return const SizedBox(
       height: 200,
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -330,11 +313,7 @@ class _LoginBottomSheet extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.error_outline,
-          size: 48,
-          color: Colors.red,
-        ),
+        Icon(Icons.error_outline, size: 48, color: Colors.red),
         const SizedBox(height: 16),
         Text(
           'Authentication Error',
@@ -362,20 +341,14 @@ class _LoginBottomSheet extends ConsumerWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 16,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
           child: Text(
             'Close',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -389,10 +362,7 @@ class _GoogleLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(20, 20),
-      painter: _GoogleLogoPainter(),
-    );
+    return CustomPaint(size: const Size(20, 20), painter: _GoogleLogoPainter());
   }
 }
 
@@ -406,37 +376,45 @@ class _GoogleLogoPainter extends CustomPainter {
     // Draw Google "G" logo
     // Red part
     paint.color = const Color(0xFFEA4335);
-    path.addRRect(RRect.fromRectAndRadius(
-      const Rect.fromLTWH(0, 0, 9, 9),
-      const Radius.circular(2),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(0, 0, 9, 9),
+        const Radius.circular(2),
+      ),
+    );
     canvas.drawPath(path, paint);
     path.reset();
 
     // Yellow part
     paint.color = const Color(0xFFFBBC05);
-    path.addRRect(RRect.fromRectAndRadius(
-      const Rect.fromLTWH(9, 0, 6, 9),
-      const Radius.circular(2),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(9, 0, 6, 9),
+        const Radius.circular(2),
+      ),
+    );
     canvas.drawPath(path, paint);
     path.reset();
 
     // Green part
     paint.color = const Color(0xFF34A853);
-    path.addRRect(RRect.fromRectAndRadius(
-      const Rect.fromLTWH(0, 9, 9, 6),
-      const Radius.circular(2),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(0, 9, 9, 6),
+        const Radius.circular(2),
+      ),
+    );
     canvas.drawPath(path, paint);
     path.reset();
 
     // Blue part
     paint.color = const Color(0xFF4285F4);
-    path.addRRect(RRect.fromRectAndRadius(
-      const Rect.fromLTWH(9, 9, 6, 6),
-      const Radius.circular(2),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(9, 9, 6, 6),
+        const Radius.circular(2),
+      ),
+    );
     canvas.drawPath(path, paint);
   }
 

@@ -1,15 +1,87 @@
 import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sync_pdf;
 import '../../../core/utils/logger.dart';
 import '../../features/reader/presentation/providers/pdf_chat_state.dart';
+
+/// Logging mixin for AI service operations
+///
+/// Provides consistent logging across AI service methods.
+/// Uses debug-only logging for verbose output in development.
+mixin AiServiceLogging {
+  /// Log authentication check
+  void logAuthCheck(FirebaseAuth auth) {
+    if (!kDebugMode) return;
+    AppLogger.i('🔐 Auth check: ${auth.currentUser?.uid}');
+    AppLogger.i('📧 Email: ${auth.currentUser?.email}');
+  }
+
+  /// Log authentication failure
+  void logAuthFailure() {
+    if (!kDebugMode) return;
+    AppLogger.e('❌ Authentication required for AI features');
+  }
+
+  /// Log operation start
+  void logOperationStart(String operation, Map<String, dynamic> metadata) {
+    if (!kDebugMode) return;
+    final buffer = StringBuffer();
+    buffer.writeln('🚀 $operation');
+    metadata.forEach((key, value) {
+      buffer.writeln('  📊 $key: $value');
+    });
+    AppLogger.i(buffer.toString().trim());
+  }
+
+  /// Log operation success
+  void logOperationSuccess(String operation, Map<String, dynamic> metadata) {
+    if (!kDebugMode) return;
+    final buffer = StringBuffer();
+    buffer.writeln('✅ $operation completed');
+    metadata.forEach((key, value) {
+      buffer.writeln('  📊 $key: $value');
+    });
+    AppLogger.i(buffer.toString().trim());
+  }
+
+  /// Log operation failure
+  void logOperationFailure(
+    String operation,
+    Object error, [
+    StackTrace? stackTrace,
+  ]) {
+    AppLogger.e('❌ $operation failed', error, stackTrace);
+    AppLogger.e('Error type: ${error.runtimeType}');
+  }
+
+  /// Log cloud function call
+  void logCloudFunctionCall(String functionName, Map<String, dynamic> data) {
+    if (!kDebugMode) return;
+    AppLogger.i('📤 Calling Firebase Cloud Function: $functionName');
+    AppLogger.i('🌐 Region: asia-southeast1');
+    AppLogger.i('📦 Data keys: ${data.keys.join(", ")}');
+  }
+
+  /// Log cloud function response
+  void logCloudFunctionResponse(Map<String, dynamic> data) {
+    if (!kDebugMode) return;
+    AppLogger.i('✅ Cloud Function responded');
+    if (data['model'] != null) {
+      AppLogger.i('🤖 Model: ${data['model']}');
+    }
+    AppLogger.i('📦 Response keys: ${data.keys.join(", ")}');
+  }
+}
 
 /// Service for AI-powered PDF interactions using Firebase Genkit.
 ///
 /// Provides text extraction from PDF documents and AI operations
 /// including summarization, data extraction, and chat Q&A.
-class PdfAIService {
+class PdfAIService with AiServiceLogging {
   final FirebaseFunctions _functions;
+  final FirebaseAuth _auth;
 
   /// Maximum characters to send to AI for context
   static const int maxContextChars = 50000;
@@ -17,8 +89,29 @@ class PdfAIService {
   /// Maximum pages to extract text from for performance
   static const int maxExtractPages = 50;
 
-  PdfAIService({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+  PdfAIService({FirebaseFunctions? functions, FirebaseAuth? auth})
+    : _functions =
+          functions ?? FirebaseFunctions.instanceFor(region: 'asia-southeast1'),
+      _auth = auth ?? FirebaseAuth.instance;
+
+  /// Verifies user is authenticated before calling AI functions
+  void _requireAuth() {
+    logOperationStart('Authentication check', {
+      'hasUser': _auth.currentUser != null,
+      'userId': _auth.currentUser?.uid,
+    });
+
+    if (_auth.currentUser == null) {
+      logAuthFailure();
+      throw PdfAiException(
+        'Authentication required for AI features. '
+        'Current status: Not authenticated. '
+        'Action: Please sign in with Google to use PDF AI features like summarization and chat.',
+      );
+    }
+
+    logAuthCheck(_auth);
+  }
 
   /// Extracts text content from a PDF file.
   ///
@@ -51,7 +144,10 @@ class PdfAIService {
 
       for (int i = 0; i < pageCount; i++) {
         // Extract text from the specific page
-        final pageText = textExtractor.extractText(startPageIndex: i, endPageIndex: i);
+        final pageText = textExtractor.extractText(
+          startPageIndex: i,
+          endPageIndex: i,
+        );
         buffer.writeln(pageText);
         buffer.writeln(); // Add spacing between pages
 
@@ -89,26 +185,69 @@ class PdfAIService {
   ///
   /// Returns the generated summary as a string.
   Future<String> generateSummary(String pdfText) async {
+    _requireAuth();
+
+    logOperationStart('Generate summary', {
+      'inputLength': pdfText.length,
+      'maxContextChars': maxContextChars,
+    });
+
     try {
       // Truncate PDF text if too long
       final truncatedText = pdfText.length > maxContextChars
           ? '${pdfText.substring(0, maxContextChars)}\n\n[Content truncated...]'
           : pdfText;
 
+      logCloudFunctionCall('summarizeFlow', {
+        'textLength': truncatedText.length,
+      });
+
+      // Note: Firebase Auth token is automatically included by the SDK
       final result = await _functions.httpsCallable('summarizeFlow').call({
         'pdfText': truncatedText,
       });
 
+      logCloudFunctionResponse(result.data);
+
       final summary = result.data['summary'] as String?;
       if (summary == null || summary.isEmpty) {
-        throw Exception('Empty response from AI service');
+        AppLogger.e('❌ Empty response from AI service');
+        AppLogger.e('❌ Response data: ${result.data}');
+        throw PdfAiException(
+          'AI service returned empty response. '
+          'Response keys: ${result.data.keys.join(", ")}. '
+          'Troubleshooting: Check Firebase Functions logs and ensure model is available.',
+        );
       }
 
-      AppLogger.i('Generated summary (${summary.length} chars)');
+      logOperationSuccess('Generate summary', {
+        'summaryLength': summary.length,
+        'preview': summary.length > 100
+            ? '${summary.substring(0, 100)}...'
+            : summary,
+      });
+
       return summary;
     } catch (e, stackTrace) {
-      AppLogger.e('Failed to generate summary', e, stackTrace);
-      throw PdfAiException('Failed to generate summary: $e');
+      logOperationFailure('Generate summary', e, stackTrace);
+
+      // Parse Firebase Functions error
+      if (e.toString().contains('firebase_functions')) {
+        AppLogger.e('❌ Firebase Functions Error detected');
+        AppLogger.e('❌ This might be due to:');
+        AppLogger.e('❌ 1. Model not available (check Firebase Functions logs)');
+        AppLogger.e('❌ 2. Authentication issue (check if user is signed in)');
+        AppLogger.e('❌ 3. Region configuration issue');
+        AppLogger.e(
+          '❌ 4. API key issue (check Google AI API key in Secret Manager)',
+        );
+      }
+
+      throw PdfAiException(
+        'Failed to generate PDF summary. '
+        'Error: ${e.runtimeType}: $e. '
+        'Action: Check your internet connection, Firebase Functions deployment, and try again.',
+      );
     }
   }
 
@@ -120,27 +259,67 @@ class PdfAIService {
   ///
   /// Returns the extracted data as a string.
   Future<String> extractData(String pdfText, String prompt) async {
+    _requireAuth();
+
+    AppLogger.i('💡 ========================================');
+    AppLogger.i('💡 === EXTRACT DATA START ===');
+    AppLogger.i('💡 ========================================');
+    AppLogger.i('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+    AppLogger.i('📄 PDF text length: ${pdfText.length} chars');
+    AppLogger.i('📝 Extraction prompt: $prompt');
+
     try {
       // Truncate PDF text if too long
       final truncatedText = pdfText.length > maxContextChars
           ? '${pdfText.substring(0, maxContextChars)}\n\n[Content truncated...]'
           : pdfText;
 
+      AppLogger.i('✂️  Truncated text length: ${truncatedText.length} chars');
+      AppLogger.i('📤 Calling Firebase Cloud Function: extractFlow');
+
+      // Note: Firebase Auth token is automatically included by the SDK
       final result = await _functions.httpsCallable('extractFlow').call({
         'pdfText': truncatedText,
         'prompt': prompt,
       });
 
-      final data = result.data['data'] as String?;
-      if (data == null || data.isEmpty) {
-        throw Exception('Empty response from AI service');
+      AppLogger.i('✅ Cloud Function called successfully');
+
+      if (result.data['model'] != null) {
+        AppLogger.i('🤖 Model used: ${result.data['model']}');
       }
 
-      AppLogger.i('Extracted data (${data.length} chars)');
+      final data = result.data['data'] as String?;
+      if (data == null || data.isEmpty) {
+        AppLogger.e('❌ Empty response from AI service');
+        throw PdfAiException(
+          'AI service returned empty data for extraction. '
+          'Response keys: ${result.data.keys.join(", ")}. '
+          'Troubleshooting: Verify the extraction prompt is valid and model is available.',
+        );
+      }
+
+      AppLogger.i('✅ Data extracted successfully');
+      AppLogger.i('📊 Extracted data length: ${data.length} chars');
+      AppLogger.i('📝 Extracted data preview: ${data.substring(0, 100)}...');
+      AppLogger.i('💡 ========================================');
+      AppLogger.i('💡 ✅ DATA EXTRACTION COMPLETED!');
+      AppLogger.i('💡 ========================================');
+
       return data;
     } catch (e, stackTrace) {
-      AppLogger.e('Failed to extract data', e, stackTrace);
-      throw PdfAiException('Failed to extract data: $e');
+      AppLogger.e('❌ ========================================');
+      AppLogger.e('❌ === DATA EXTRACTION FAILED ===');
+      AppLogger.e('❌ ========================================');
+      AppLogger.e('❌ Error type: ${e.runtimeType}');
+      AppLogger.e('❌ Error message: $e');
+      AppLogger.e('❌ Stack trace: ${stackTrace.toString()}');
+      AppLogger.e('💡 ========================================');
+      throw PdfAiException(
+        'Failed to extract data from PDF. '
+        'Error: ${e.runtimeType}: $e. '
+        'Action: Check the extraction prompt format and try again.',
+      );
     }
   }
 
@@ -157,38 +336,71 @@ class PdfAIService {
     String question,
     List<ChatMessage> history,
   ) async {
+    _requireAuth();
+
+    AppLogger.i('💡 ========================================');
+    AppLogger.i('💡 === CHAT WITH DOCUMENT START ===');
+    AppLogger.i('💡 ========================================');
+    AppLogger.i('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+    AppLogger.i('📄 PDF text length: ${pdfText.length} chars');
+    AppLogger.i('❓ User question: $question');
+    AppLogger.i('💬 Chat history length: ${history.length} messages');
+
     try {
       // Truncate PDF text if too long
       final truncatedText = pdfText.length > maxContextChars
           ? '${pdfText.substring(0, maxContextChars)}\n\n[Content truncated...]'
           : pdfText;
 
+      AppLogger.i('✂️  Truncated text length: ${truncatedText.length} chars');
+
       // Convert chat history to JSON format
       final historyJson = history
           .map(
-            (m) => {
-              'role': m.isUser ? 'user' : 'model',
-              'content': m.content,
-            },
+            (m) => {'role': m.isUser ? 'user' : 'model', 'content': m.content},
           )
           .toList();
 
+      AppLogger.i('📤 Calling Firebase Cloud Function: chatFlow');
+
+      // Note: Firebase Auth token is automatically included by the SDK
       final result = await _functions.httpsCallable('chatFlow').call({
         'pdfText': truncatedText,
         'question': question,
         'history': historyJson,
       });
 
-      final response = result.data['response'] as String?;
-      if (response == null || response.isEmpty) {
-        throw Exception('Empty response from AI service');
+      AppLogger.i('✅ Cloud Function called successfully');
+
+      if (result.data['model'] != null) {
+        AppLogger.i('🤖 Model used: ${result.data['model']}');
       }
 
-      AppLogger.i('Chat response received (${response.length} chars)');
+      final response = result.data['response'] as String?;
+      if (response == null || response.isEmpty) {
+        AppLogger.e('❌ Empty response from AI service');
+        throw PdfAiException(
+          'AI service returned empty chat response. '
+          'Response keys: ${result.data.keys.join(", ")}. '
+          'Troubleshooting: Check if the question is valid and model is available.',
+        );
+      }
+
+      AppLogger.i('✅ Chat response generated successfully');
+      AppLogger.i('📊 Response length: ${response.length} chars');
+      AppLogger.i('📝 Response preview: ${response.substring(0, 100)}...');
+      AppLogger.i('💡 ========================================');
+      AppLogger.i('💡 ✅ CHAT COMPLETED SUCCESSFULLY!');
+      AppLogger.i('💡 ========================================');
+
       return response;
     } catch (e, stackTrace) {
-      AppLogger.e('Failed to chat with document', e, stackTrace);
-      throw PdfAiException('Failed to get response: $e');
+      logOperationFailure('Chat with document', e, stackTrace);
+      throw PdfAiException(
+        'Failed to get AI chat response. '
+        'Error: ${e.runtimeType}: $e. '
+        'Action: Verify your question is clear and try again.',
+      );
     }
   }
 }

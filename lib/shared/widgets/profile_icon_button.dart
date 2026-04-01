@@ -13,10 +13,7 @@ import '../../../features/auth/presentation/widgets/login_bottom_sheet.dart';
 /// - Unauthenticated: Person icon with primary color
 /// - Authenticated: User profile photo or person icon
 class ProfileIconButton extends ConsumerWidget {
-  const ProfileIconButton({
-    super.key,
-    this.size = 40,
-  });
+  const ProfileIconButton({super.key, this.size = 40});
 
   final double size;
 
@@ -50,11 +47,7 @@ class ProfileIconButton extends ConsumerWidget {
   }
 
   Widget _buildDefaultIcon() {
-    return Icon(
-      Icons.person,
-      color: AppTheme.primary,
-      size: size * 0.6,
-    );
+    return Icon(Icons.person, color: AppTheme.primary, size: size * 0.6);
   }
 
   Widget _buildLoadingIndicator() {

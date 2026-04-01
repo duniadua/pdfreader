@@ -25,9 +25,10 @@ final firebaseAuthProvider = AutoDisposeProvider<FirebaseAuth>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseAuthRef = AutoDisposeProviderRef<FirebaseAuth>;
-String _$googleSignInHash() => r'a38525239a729cf44c3c89cfb851b9d0a66dde1c';
+String _$googleSignInHash() => r'd3cf16ae6cdc534b2df0ac12eb0f099fd68aa8e2';
 
 /// Provider for GoogleSignIn instance
+/// Includes Google Drive scope for PDF file access
 ///
 /// Copied from [googleSignIn].
 @ProviderFor(googleSignIn)

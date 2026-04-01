@@ -98,28 +98,32 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
   }
 
   Future<void> _checkPendingPdfIntent(WidgetRef ref) async {
+    AppLogger.i('=== Checking for pending PDF intent ===');
+
     final intentHandler = ref.read(pdfIntentHandlerProvider);
-    final filePath = intentHandler.getPendingFilePath();
+    final filePath = await intentHandler.getPendingFilePath();
+
+    AppLogger.i('Pending file path: $filePath');
 
     if (filePath != null) {
-      AppLogger.i('Processing pending PDF intent: $filePath');
+      AppLogger.i('🎯 Processing pending PDF intent: $filePath');
 
       if (mounted) {
-        // Show loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Importing PDF...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-
         // Import PDF and navigate to reader
+        AppLogger.i('📥 Starting PDF import and navigation...');
         await intentHandler.handlePdfIntent(filePath, (pdfId) {
+          AppLogger.i('✅ PDF imported with ID: $pdfId, navigating to reader');
           if (mounted) {
-            ref.read(routerProvider).go('${AppRoutes.reader}?pdfId=$pdfId');
+            final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
+            AppLogger.i('🚀 Navigating to: $readerUrl');
+            ref.read(routerProvider).go(readerUrl);
+          } else {
+            AppLogger.w('⚠️ Widget not mounted, cannot navigate');
           }
         });
       }
+    } else {
+      AppLogger.i('ℹ️ No pending PDF intent found');
     }
   }
 

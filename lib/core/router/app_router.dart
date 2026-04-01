@@ -5,7 +5,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/library/presentation/library_screen.dart';
 import '../../features/reader/presentation/pdf_reader_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
-import '../../../core/utils/logger.dart';
 
 part 'app_router.g.dart';
 
@@ -65,20 +64,17 @@ class _ErrorPage extends StatelessWidget {
 GoRouter router(Ref ref) {
   return GoRouter(
     initialLocation: AppRoutes.library,
-    debugLogDiagnostics: true, // Enable for debugging PDF intent issues
+    debugLogDiagnostics: false,
     redirect: (context, state) {
       // Handle PDF file URIs from intent (file:// or content://)
       final uri = state.uri;
       final path = uri.path;
-      final query = uri.queryParameters;
 
       // Check if this looks like a file path (not a route)
       if (path.contains('.pdf') || path.startsWith('/storage/') || path.startsWith('/content/')) {
-        AppLogger.i('Redirecting file URI to library: $path');
         return AppRoutes.library;
       }
 
-      // Add auth guards here in the future
       return null;
     },
     routes: [

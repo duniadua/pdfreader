@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,13 +90,26 @@ class PdfReaderApp extends ConsumerStatefulWidget {
 }
 
 class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
+  StreamSubscription<String>? _intentSubscription;
+
   @override
   void initState() {
     super.initState();
     // Check for pending PDF intent after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPendingPdfIntent(ref);
+      // Subscribe to subsequent intents (app already running).
+      final intentHandler = ref.read(pdfIntentHandlerProvider);
+      _intentSubscription = intentHandler.intentStream.listen((filePath) {
+        _handleIncomingIntent(filePath);
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _intentSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkPendingPdfIntent(WidgetRef ref) async {
@@ -102,17 +117,22 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
     final filePath = await intentHandler.getPendingFilePath();
 
     if (filePath != null) {
-      AppLogger.i('Processing PDF intent: $filePath');
-
-      if (mounted) {
-        await intentHandler.handlePdfIntent(filePath, (pdfId) {
-          if (mounted) {
-            final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
-            ref.read(routerProvider).go(readerUrl);
-          }
-        });
-      }
+      _handleIncomingIntent(filePath);
     }
+  }
+
+  Future<void> _handleIncomingIntent(String filePath) async {
+    AppLogger.i('Processing PDF intent: $filePath');
+
+    if (!mounted) return;
+
+    final intentHandler = ref.read(pdfIntentHandlerProvider);
+    await intentHandler.handlePdfIntent(filePath, (pdfId) {
+      if (mounted) {
+        final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
+        ref.read(routerProvider).go(readerUrl);
+      }
+    });
   }
 
   @override

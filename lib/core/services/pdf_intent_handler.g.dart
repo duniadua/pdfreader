@@ -8,7 +8,8 @@ part of 'pdf_intent_handler.dart';
 
 String _$pdfIntentHandlerHash() => r'78557f8226ad369a80fa9a3f9b5ac71fe48ddbd1';
 
-/// Provider for PdfIntentHandler - keeps alive to handle intents throughout app lifecycle
+/// Provider for PdfIntentHandler — keeps alive to handle intents throughout
+/// the app lifecycle.
 ///
 /// Copied from [pdfIntentHandler].
 @ProviderFor(pdfIntentHandler)

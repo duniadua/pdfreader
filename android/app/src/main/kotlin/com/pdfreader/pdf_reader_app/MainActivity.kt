@@ -49,29 +49,38 @@ class MainActivity : FlutterActivity() {
         val data = intent.data ?: return null
 
         return when (data.scheme) {
-            "content" -> copyContentUriToCache(data)
+            "content" -> copyContentUriToInternal(data)
             "file" -> data.path
             else -> null
         }
     }
 
-    private fun copyContentUriToCache(uri: android.net.Uri): String? {
+    private fun copyContentUriToInternal(uri: android.net.Uri): String? {
         return try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
 
             // Extract original filename from URI
             val originalFileName = getFileNameFromUri(uri)
-            val tempFile = File(cacheDir, originalFileName)
-            android.util.Log.i("MainActivity", "Copying PDF to cache: $originalFileName")
+            var targetFile = File(filesDir, originalFileName)
+
+            // Prevent overwrite: append unique suffix if file already exists
+            if (targetFile.exists()) {
+                val suffix = System.currentTimeMillis().toString(16).take(8)
+                val baseName = originalFileName.substringBeforeLast('.')
+                val extension = originalFileName.substringAfterLast('.', "pdf")
+                targetFile = File(filesDir, "${baseName}_$suffix.$extension")
+            }
+
+            android.util.Log.i("MainActivity", "Copying PDF to internal storage: ${targetFile.name}")
 
             inputStream.use { input ->
-                tempFile.outputStream().use { output ->
+                targetFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
 
-            android.util.Log.i("MainActivity", "PDF copied successfully: ${tempFile.absolutePath}")
-            tempFile.absolutePath
+            android.util.Log.i("MainActivity", "PDF copied successfully: ${targetFile.absolutePath}")
+            targetFile.absolutePath
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Failed to copy PDF from URI", e)
             null

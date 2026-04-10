@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../data/models/drive_file.dart';
+import '../../domain/entities/drive_file.dart';
 
 part 'drive_state.freezed.dart';
 
@@ -16,7 +16,7 @@ class DriveState with _$DriveState {
     String? userName,
     String? downloadingFileName,
     String? errorMessage,
-    @Default([]) List<DriveFileModel> files,
+    @Default([]) List<DriveFile> files,
     DateTime? lastSyncTime,
   }) = _DriveState;
 

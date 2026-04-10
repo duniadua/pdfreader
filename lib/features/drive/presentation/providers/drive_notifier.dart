@@ -2,9 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/utils/logger.dart';
-import '../../data/repositories/drive_repository.dart';
 import '../../data/repositories/drive_repository_impl.dart';
-import '../../data/drive_file_cache.dart';
+import '../../domain/repositories/drive_repository.dart';
 import 'drive_state.dart';
 
 part 'drive_notifier.g.dart';

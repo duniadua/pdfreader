@@ -249,7 +249,12 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        bottom: 8,
+        top: 8,
+      ),
       itemCount: messages.length + (chatState.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < messages.length) {
@@ -323,9 +328,16 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   /// Build input area with text field and send button
   Widget _buildInputArea(BuildContext context, PdfChatState chatState) {
     final isProcessing = chatState.isLoading || chatState.isExtractingText;
+    // Get keyboard height to push input area above keyboard
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 12,
+        bottom: 12 + keyboardHeight, // Add keyboard height to bottom padding
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(

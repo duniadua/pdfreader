@@ -25,7 +25,7 @@ mixin _$DriveState {
   String? get userName => throw _privateConstructorUsedError;
   String? get downloadingFileName => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
-  List<DriveFileModel> get files => throw _privateConstructorUsedError;
+  List<DriveFile> get files => throw _privateConstructorUsedError;
   DateTime? get lastSyncTime => throw _privateConstructorUsedError;
 
   /// Create a copy of DriveState
@@ -51,7 +51,7 @@ abstract class $DriveStateCopyWith<$Res> {
     String? userName,
     String? downloadingFileName,
     String? errorMessage,
-    List<DriveFileModel> files,
+    List<DriveFile> files,
     DateTime? lastSyncTime,
   });
 }
@@ -119,7 +119,7 @@ class _$DriveStateCopyWithImpl<$Res, $Val extends DriveState>
             files: null == files
                 ? _value.files
                 : files // ignore: cast_nullable_to_non_nullable
-                      as List<DriveFileModel>,
+                      as List<DriveFile>,
             lastSyncTime: freezed == lastSyncTime
                 ? _value.lastSyncTime
                 : lastSyncTime // ignore: cast_nullable_to_non_nullable
@@ -148,7 +148,7 @@ abstract class _$$DriveStateImplCopyWith<$Res>
     String? userName,
     String? downloadingFileName,
     String? errorMessage,
-    List<DriveFileModel> files,
+    List<DriveFile> files,
     DateTime? lastSyncTime,
   });
 }
@@ -215,7 +215,7 @@ class __$$DriveStateImplCopyWithImpl<$Res>
         files: null == files
             ? _value._files
             : files // ignore: cast_nullable_to_non_nullable
-                  as List<DriveFileModel>,
+                  as List<DriveFile>,
         lastSyncTime: freezed == lastSyncTime
             ? _value.lastSyncTime
             : lastSyncTime // ignore: cast_nullable_to_non_nullable
@@ -237,7 +237,7 @@ class _$DriveStateImpl implements _DriveState {
     this.userName,
     this.downloadingFileName,
     this.errorMessage,
-    final List<DriveFileModel> files = const [],
+    final List<DriveFile> files = const [],
     this.lastSyncTime,
   }) : _files = files;
 
@@ -262,10 +262,10 @@ class _$DriveStateImpl implements _DriveState {
   final String? downloadingFileName;
   @override
   final String? errorMessage;
-  final List<DriveFileModel> _files;
+  final List<DriveFile> _files;
   @override
   @JsonKey()
-  List<DriveFileModel> get files {
+  List<DriveFile> get files {
     if (_files is EqualUnmodifiableListView) return _files;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_files);
@@ -339,7 +339,7 @@ abstract class _DriveState implements DriveState {
     final String? userName,
     final String? downloadingFileName,
     final String? errorMessage,
-    final List<DriveFileModel> files,
+    final List<DriveFile> files,
     final DateTime? lastSyncTime,
   }) = _$DriveStateImpl;
 
@@ -360,7 +360,7 @@ abstract class _DriveState implements DriveState {
   @override
   String? get errorMessage;
   @override
-  List<DriveFileModel> get files;
+  List<DriveFile> get files;
   @override
   DateTime? get lastSyncTime;
 

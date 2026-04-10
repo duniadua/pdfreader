@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'models/drive_file.dart';
+import '../domain/entities/drive_file.dart';
 
 /// Cache service for Google Drive file listings
 /// Uses SharedPreferences for persistent storage
@@ -22,7 +22,7 @@ class DriveFileCache {
   }
 
   /// Get cached files if available and not expired
-  Future<List<DriveFileModel>?> get() async {
+  Future<List<DriveFile>?> get() async {
     final timestampStr = _prefs.getString(_timestampKey);
     if (timestampStr == null) return null;
 
@@ -41,7 +41,7 @@ class DriveFileCache {
     try {
       final List<dynamic> jsonList = json.decode(filesJson) as List;
       return jsonList
-          .map((json) => DriveFileModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => DriveFile.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       // Invalid cache data, clear it
@@ -51,7 +51,7 @@ class DriveFileCache {
   }
 
   /// Save files to cache
-  Future<void> set(List<DriveFileModel> files) async {
+  Future<void> set(List<DriveFile> files) async {
     final filesJson = json.encode(files.map((f) => f.toJson()).toList());
     await _prefs.setString(_timestampKey, DateTime.now().toIso8601String());
     await _prefs.setString(_filesKey, filesJson);
@@ -81,21 +81,4 @@ class DriveFileCache {
     final timestamp = DateTime.parse(timestampStr);
     return DateTime.now().difference(timestamp);
   }
-}
-
-/// Cache strategy for fetching Drive files
-enum DriveCacheStrategy {
-  /// Return cache immediately if available (stale or fresh)
-  cacheFirst,
-
-  /// Return cache immediately if available, then refresh in background
-  cacheThenRefresh,
-
-  /// Always fetch from API, skip cache
-  forceRefresh,
-}
-
-extension DriveCacheStrategyExt on DriveCacheStrategy {
-  bool get useCache => this != DriveCacheStrategy.forceRefresh;
-  bool get backgroundRefresh => this == DriveCacheStrategy.cacheThenRefresh;
 }

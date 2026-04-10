@@ -2,11 +2,11 @@ import 'dart:typed_data';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../core/services/google_drive_service.dart';
+import '../../../../core/services/google_drive_service.dart' as svc;
 import '../../../../core/utils/logger.dart';
-import '../models/drive_file.dart';
+import '../../domain/entities/drive_file.dart';
+import '../../domain/repositories/drive_repository.dart';
 import '../drive_file_cache.dart';
-import 'drive_repository.dart';
 
 part 'drive_repository_impl.g.dart';
 
@@ -19,7 +19,7 @@ DriveRepository driveRepository(DriveRepositoryRef ref) {
 /// Implementation of DriveRepository using GoogleDriveService
 /// Uses existing Google Sign-In - no separate authentication required.
 class DriveRepositoryImpl implements DriveRepository {
-  final GoogleDriveService _service = GoogleDriveService.instance;
+  final svc.GoogleDriveService _service = svc.GoogleDriveService.instance;
 
   DriveFileCache? _cache;
 
@@ -86,7 +86,7 @@ class DriveRepositoryImpl implements DriveRepository {
   }
 
   @override
-  Future<DriveResult<List<DriveFileModel>>> getPdfFiles([
+  Future<DriveResult<List<DriveFile>>> getPdfFiles([
     DriveCacheStrategy strategy = DriveCacheStrategy.cacheFirst,
   ]) async {
     if (!_service.isSignedIn) {
@@ -113,7 +113,7 @@ class DriveRepositoryImpl implements DriveRepository {
   }
 
   @override
-  Future<DriveResult<List<DriveFileModel>>> refreshPdfFiles() async {
+  Future<DriveResult<List<DriveFile>>> refreshPdfFiles() async {
     if (!_service.isSignedIn) {
       return const DriveResult.failure(DriveFailure.notAuthenticated());
     }
@@ -127,13 +127,13 @@ class DriveRepositoryImpl implements DriveRepository {
     await cache.clear();
   }
 
-  Future<DriveResult<List<DriveFileModel>>> _fetchAndCacheFiles() async {
+  Future<DriveResult<List<DriveFile>>> _fetchAndCacheFiles() async {
     try {
       final driveFiles = await _service.listPdfs();
 
       final models = driveFiles
           .map(
-            (file) => DriveFileModel(
+            (file) => DriveFile(
               id: file.id,
               name: file.name,
               size: file.size,

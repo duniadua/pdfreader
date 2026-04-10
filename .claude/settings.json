@@ -5,6 +5,38 @@
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-bash-safety.sh \"$ARGUMENTS\"",
+            "statusMessage": "Checking command safety..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-write-check.sh \"$ARGUMENTS\"",
+            "statusMessage": "Validating file structure..."
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-read-validate.sh \"$ARGUMENTS\"",
+            "statusMessage": "Validating file access..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit",
@@ -13,6 +45,60 @@
             "type": "command",
             "command": "flutter analyze --fatal-infos 2>&1 | head -20 || echo '⚠️  Analyzer issues detected'",
             "statusMessage": "Checking for Dart analyzer issues..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit-format.sh \"$ARGUMENTS\"",
+            "async": true,
+            "statusMessage": "Formatting file..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit-build-runner.sh \"$ARGUMENTS\"",
+            "async": true,
+            "statusMessage": "Checking code generation..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-bash-dependency.sh \"$ARGUMENTS\"",
+            "statusMessage": "Checking dependencies..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-write-test-suggest.sh \"$ARGUMENTS\"",
+            "statusMessage": "Checking test coverage..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-test-validate.sh",
+            "statusMessage": "Running quality checks..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-session-summary.sh",
+            "statusMessage": "Generating session summary..."
           }
         ]
       }

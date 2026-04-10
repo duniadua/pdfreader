@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-A local-only PDF reader mobile application built with Flutter. No backend API required.
+A PDF reader mobile application built with Flutter. Core functionality is local-only, with optional cloud features:
+- **Local**: PDF library, viewing, bookmarks, settings (Hive storage)
+- **Optional Cloud**: Google Drive integration, AI chat (Firebase Genkit)
 
 ## Project Structure
 
@@ -19,10 +21,12 @@ A local-only PDF reader mobile application built with Flutter. No backend API re
 │   │   ├── theme/                # App theme (light/dark, design tokens)
 │   │   └── utils/                # Utility functions
 │   ├── features/
+│   │   ├── auth/                 # Authentication (Google Sign-In)
+│   │   ├── drive/                # Google Drive integration
 │   │   ├── library/              # PDF library screen with bottom nav
-│   │   ├── reader/               # PDF viewer with Syncfusion
-│   │   ├── settings/             # App settings/preferences
-│   │   └── scanner/              # Document scanner (future)
+│   │   ├── reader/               # PDF viewer with Syncfusion (includes AI chat)
+│   │   ├── scanner/              # Document scanner
+│   │   └── settings/             # App settings/preferences
 │   └── shared/                   # Shared widgets and providers
 ├── stitch/                       # HTML prototypes from Stitch (design reference)
 ├── assets/                       # Images, icons, fonts
@@ -55,6 +59,93 @@ flutter test
 flutter analyze
 ```
 
+## App Information
+
+| Property | Value |
+|----------|-------|
+| Package Name | `com.pdfreader.pdf_reader_app` |
+| Flutter Version | 3.38.5 (stable) |
+| APK Output | `build/app/outputs/flutter-apk/` |
+
+### ADB Commands
+```bash
+# Install APK to connected device
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+
+# Launch the app
+adb shell am start -n com.pdfreader.pdf_reader_app/.MainActivity
+
+# View logs
+adb logcat | grep pdf_reader
+```
+
+## Feature Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Auth** | Google Sign-In integration for authentication. Required for Drive integration. |
+| **Drive** | Google Drive integration for accessing PDFs from cloud storage. Follows Clean Architecture with domain/data/presentation layers. |
+| **Reader** | PDF viewer with Syncfusion. Includes AI chat panel for PDF Q&A using Firebase Genkit. |
+| **Library** | PDF library with bottom navigation, search, and filtering. |
+| **Settings** | App preferences including theme (light/dark), reading settings. |
+
+## Automation Tools
+
+### Skills
+
+The `.claude/skills/` directory contains reusable skills:
+
+| Skill | Purpose |
+|-------|---------|
+| `/pre-commit` | Run all validation checks before committing |
+| `/code-review` | Review code for maintainability and security |
+| `/test-generator` | Generate tests for new features |
+| `/model-generator` | Generate Hive models with Freezed |
+| `/scaffold-feature` | Generate feature scaffold structure |
+| `/build-install-apk` | Build and install APK to connected device |
+
+### Hooks
+
+Pre/post hooks automate quality checks:
+
+| Hook | Purpose |
+|------|---------|
+| `pre-bash-safety.sh` | Warn before dangerous commands (rm -rf, git reset --hard) |
+| `pre-write-check.sh` | Validate file structure for new files in lib/features/ |
+| `pre-read-validate.sh` | Warn about large files or sensitive data |
+| `pre-test-validate.sh` | Check for missing generated files (@freezed, @riverpod) |
+| `post-edit-format.sh` | Auto-format code after edits |
+| `post-edit-build-runner.sh` | Detect model changes requiring build_runner |
+| `post-bash-dependency.sh` | Track dependency changes to dependency-log.txt |
+
+### Scripts
+
+```bash
+# Build and install APK to connected device
+.claude/scripts/build-install-apk.sh
+
+# Or use the skill:
+/build-install-apk
+```
+
+## Pre-Commit Validation
+
+Use the `/pre-commit` skill to run all validation checks before committing:
+
+```bash
+/pre-commit              # Run all checks
+/pre-commit --fix        # Run + auto-fix issues
+/pre-commit --filter=format,analyze  # Run specific checks
+```
+
+**What it checks:**
+- Code formatting (`dart format`)
+- Analyzer issues (`flutter analyze`)
+- Test execution (`flutter test`)
+- Test coverage (target: 80%)
+- TODO/FIXME detection
+- Build runner status
+
 ## Fast APK Build
 
 **APK Output Location:** `build/app/outputs/flutter-apk/`
@@ -71,6 +162,12 @@ flutter build apk --debug --target-platform android-arm64
 ```
 
 **Tip:** Gradle parallel build enabled in `android/gradle.properties` for faster builds.
+
+**Quick Build & Install:**
+Use the `/build-install-apk` skill to build and install to a connected device in one command:
+```bash
+/build-install-apk
+```
 
 ## Testing Workflow
 
@@ -259,9 +356,9 @@ The `stitch/` directory contains HTML prototypes used as design reference:
 | Screen | Prototype | Implementation |
 |--------|-----------|----------------|
 | Library | `my_library/` | `features/library/` |
-| Reader | `pdf_reader_view/` | `features/reader/` |
+| Reader | `pdf_reader_view/` | `features/reader/` (includes AI chat panel) |
 | Settings | `settings_and_customization/` | `features/settings/` |
-| File Import | `file_import_and_cloud/` | Not implemented (local-only) |
+| File Import | `file_import_and_cloud/` | `features/drive/` (Google Drive integration) |
 
 Open `stitch/*/code.html` in a browser to view the design prototypes.
 
@@ -315,7 +412,7 @@ Always verify Dart code with the analyzer before considering edits complete to c
 
 ## Firebase & Cloud Functions Debugging
 
-For debugging Firebase-related issues (AI chat, Genkit functions, authentication), use the Firebase CLI directly in Claude sessions via the Bash tool.
+The app uses Firebase Genkit for the AI chat feature in the reader. For debugging Firebase-related issues (AI chat, Genkit functions, authentication), use the Firebase CLI directly in Claude sessions via the Bash tool.
 
 **Common debugging commands**:
 ```bash
@@ -565,3 +662,63 @@ flutter test
 3. **Follow Material 3** - use Material 3 components
 4. **Proper spacing** - use consistent padding/margin values (4, 8, 12, 16, 24, 32)
 5. **Dark mode support** - always test in both light and dark themes
+
+---
+
+## Documentation Guidelines
+
+### Where to Create Markdown Files
+
+**IMPORTANT**: All new `.md` files must be created in the `docs/` folder, except for:
+- `README.md` - Project overview (keep at root)
+- `CLAUDE.md` - Claude Code instructions (keep at root)
+
+### Examples
+
+✅ **CORRECT** - Create documentation files in `docs/`:
+```bash
+docs/API_REFERENCE.md          # API documentation
+docs/ARCHITECTURE.md           # System architecture
+docs/DEPLOYMENT_GUIDE.md       # Deployment instructions
+docs/TROUBLESHOOTING.md        # Troubleshooting guide
+```
+
+❌ **WRONG** - Don't create these at root level:
+```bash
+# Don't do this (except README.md and CLAUDE.md):
+API_REFERENCE.md
+ARCHITECTURE.md
+FEATURE_X_DOCUMENTATION.md
+```
+
+### Why This Rule?
+
+1. **Clean repository root** - Keeps root directory focused on code
+2. **Organized documentation** - All docs in one searchable location
+3. **Git ignore compatibility** - `docs/` folder is gitignored for local/working docs
+4. **Exception for key files** - `README.md` and `CLAUDE.md` stay at root for visibility
+
+### Moving Existing Docs
+
+When you encounter `.md` files at root level (except `README.md` and `CLAUDE.md`), move them to `docs/`:
+
+```bash
+# Example: Move an existing doc to docs folder
+mv EXISTING_FILE.md docs/
+```
+
+### Documentation File Types
+
+These belong in `docs/`:
+- API references
+- Architecture diagrams
+- Deployment guides
+- Feature specifications
+- Technical design docs
+- Troubleshooting guides
+- Meeting notes
+- Migration plans
+
+These stay at root:
+- `README.md` - Project overview for GitHub
+- `CLAUDE.md` - Instructions for Claude Code

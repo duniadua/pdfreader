@@ -139,3 +139,6 @@ testspecify/
 
 # Migration plans (sensitive information)
 MIGRATION_PLAN_GOOGLE_AI.md
+
+# Documentation folder (local docs not tracked)
+docs/

@@ -72,7 +72,7 @@ Firebase Project: pdfreader-8405a
 - ✅ Authentication required
 - ✅ Input validation: pdfText (string, non-empty, max 50KB)
 - ✅ API key: Secret Manager (GOOGLE_AI_API_KEY)
-- ✅ Model: gemini-2.5-flash (updated from deprecated gemini-2.0-flash)
+- ✅ Model: gemini-2.5-flash-lite (updated from gemini-2.5-flash)
 - ✅ Error handling: Specific error messages (unauthenticated, invalid-argument, failed-precondition)
 - ✅ Response sanitization: Trims whitespace, validates non-empty
 
@@ -80,7 +80,7 @@ Firebase Project: pdfreader-8405a
 - ✅ Authentication required
 - ✅ Input validation: pdfText (string, non-empty, max 30KB), question (string, non-empty)
 - ✅ API key: Secret Manager (GOOGLE_AI_API_KEY)
-- ✅ Model: gemini-2.5-flash
+- ✅ Model: gemini-2.5-flash-lite
 - ✅ Error handling: Specific error messages
 - ✅ Response sanitization: Trims whitespace, validates non-empty
 
@@ -88,7 +88,7 @@ Firebase Project: pdfreader-8405a
 - ✅ Authentication required
 - ✅ Input validation: pdfText (string, non-empty, max 50KB), prompt (string, non-empty)
 - ✅ API key: Secret Manager (GOOGLE_AI_API_KEY)
-- ✅ Model: gemini-2.5-flash
+- ✅ Model: gemini-2.5-flash-lite
 - ✅ Error handling: Specific error messages
 - ✅ Response sanitization: Trims whitespace, validates non-empty
 

@@ -325,7 +325,7 @@ describe('Firebase Functions - Edge Case Tests', () => {
           question: 'What is this?',
         });
 
-        await expect(wrapped(request)).rejects.toThrow('pdfText is required');
+        await expect(wrapped(request)).rejects.toThrow('PDF content detected');
       });
 
       it('should reject whitespace-only pdfText', async () => {
@@ -335,7 +335,7 @@ describe('Firebase Functions - Edge Case Tests', () => {
           question: 'What is this?',
         });
 
-        await expect(wrapped(request)).rejects.toThrow('pdfText cannot be empty');
+        await expect(wrapped(request)).rejects.toThrow('PDF appears to be empty');
       });
 
       it('should reject null question', async () => {
@@ -364,7 +364,7 @@ describe('Firebase Functions - Edge Case Tests', () => {
           question: '',
         });
 
-        await expect(wrapped(request)).rejects.toThrow('question is required');
+        await expect(wrapped(request)).rejects.toThrow('Please enter a question');
       });
 
       it('should reject whitespace-only question', async () => {
@@ -374,7 +374,7 @@ describe('Firebase Functions - Edge Case Tests', () => {
           question: '   \n\t   ',
         });
 
-        await expect(wrapped(request)).rejects.toThrow('question cannot be empty');
+        await expect(wrapped(request)).rejects.toThrow('only special characters');
       });
 
       it('should reject non-string pdfText', async () => {
@@ -440,7 +440,7 @@ describe('Firebase Functions - Edge Case Tests', () => {
       expect(result).toBeDefined();
       expect(result.status).toBe('healthy');
       expect(result.version).toBeDefined();
-      expect(result.model).toBe('gemini-2.5-flash');
+      expect(result.model).toBe('gemini-2.5-flash-lite');
       expect(result.region).toBe('asia-southeast1');
       expect(result.features).toContain('summarizeFlow');
       expect(result.features).toContain('extractFlow');

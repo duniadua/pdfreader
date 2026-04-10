@@ -6,6 +6,16 @@ import 'package:syncfusion_flutter_pdf/pdf.dart' as sync_pdf;
 import '../../../core/utils/logger.dart';
 import '../../features/reader/presentation/providers/pdf_chat_state.dart';
 
+/// Error codes from Firebase Functions
+class FirebaseErrorCodes {
+  static const String unauthenticated = 'unauthenticated';
+  static const String invalidArgument = 'invalid-argument';
+  static const String resourceExhausted = 'resource-exhausted';
+  static const String failedPrecondition = 'failed-precondition';
+  static const String notFound = 'not-found';
+  static const String internal = 'internal';
+}
+
 /// Logging mixin for AI service operations
 ///
 /// Provides consistent logging across AI service methods.
@@ -323,6 +333,74 @@ class PdfAIService with AiServiceLogging {
     }
   }
 
+  /// Parse Firebase Functions error and extract user-friendly message
+  PdfAiException _parseFirebaseError(Object error) {
+    if (error is FirebaseFunctionsException) {
+      final code = error.code;
+      final message = error.message;
+      final details = error.details;
+
+      AppLogger.e('🔴 Firebase Functions Error');
+      AppLogger.e('  Code: $code');
+      AppLogger.e('  Message: $message');
+      AppLogger.e('  Details: $details');
+
+      // Extract the detailed message from the server
+      // The server now provides user-friendly error messages with emojis
+      String userMessage = message ?? 'An unknown error occurred';
+
+      // Add context based on error code
+      switch (code) {
+        case FirebaseErrorCodes.resourceExhausted:
+          // Rate limit error - message already contains detailed info
+          return PdfAiException(userMessage);
+
+        case FirebaseErrorCodes.invalidArgument:
+          // Validation error - message already contains details
+          return PdfAiException(userMessage);
+
+        case FirebaseErrorCodes.unauthenticated:
+          return PdfAiException(
+            '🔐 Authentication required\n\n'
+            'Please sign in to use PDF AI features.\n\n'
+            'Your session may have expired. Please sign in again.',
+          );
+
+        case FirebaseErrorCodes.failedPrecondition:
+          // API key or configuration issue
+          return PdfAiException(
+            '⚙️ Service temporarily unavailable\n\n'
+            'The AI service is not properly configured. '
+            'Please try again in a few minutes or contact support if the issue persists.',
+          );
+
+        case FirebaseErrorCodes.notFound:
+          return PdfAiException(
+            '🤖 AI model not available\n\n'
+            'The AI service is currently unavailable. '
+            'Please try again in a few minutes.',
+          );
+
+        case FirebaseErrorCodes.internal:
+          return PdfAiException(
+            '💥 Something went wrong\n\n'
+            'An unexpected error occurred. Please try again.\n\n'
+            'If this keeps happening, please contact support with error details.',
+          );
+
+        default:
+          return PdfAiException(userMessage);
+      }
+    }
+
+    // Not a Firebase Functions error
+    return PdfAiException(
+      'Failed to get AI chat response. '
+      'Error: ${error.runtimeType}: $error. '
+      'Action: Verify your question is clear and try again.',
+    );
+  }
+
   /// Sends a question about the PDF content and receives an AI response.
   ///
   /// Parameters:
@@ -394,6 +472,9 @@ class PdfAIService with AiServiceLogging {
       AppLogger.i('💡 ========================================');
 
       return response;
+    } on FirebaseFunctionsException catch (e, stackTrace) {
+      logOperationFailure('Chat with document', e, stackTrace);
+      throw _parseFirebaseError(e);
     } catch (e, stackTrace) {
       logOperationFailure('Chat with document', e, stackTrace);
       throw PdfAiException(

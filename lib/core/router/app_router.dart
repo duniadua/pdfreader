@@ -5,6 +5,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/library/presentation/library_screen.dart';
 import '../../features/reader/presentation/pdf_reader_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../shared/screens/intent_loading_screen.dart';
+import '../providers/intent_loading_provider.dart';
 
 part 'app_router.g.dart';
 
@@ -16,6 +18,7 @@ class AppRoutes {
   static const String favorites = '/favorites';
   static const String timeline = '/timeline';
   static const String cloud = '/cloud';
+  static const String intentLoading = '/intent-loading';
 }
 
 /// Error page for unmatched routes
@@ -66,6 +69,20 @@ GoRouter router(Ref ref) {
     initialLocation: AppRoutes.library,
     debugLogDiagnostics: false,
     redirect: (context, state) {
+      // If processing an intent, show loading screen
+      final isProcessingIntent = ref.read(intentLoadingProvider);
+      final currentPath = state.uri.path;
+
+      // Redirect to loading if processing intent (but not already at loading)
+      if (isProcessingIntent && currentPath != AppRoutes.intentLoading) {
+        return AppRoutes.intentLoading;
+      }
+
+      // If at loading route but not processing intent, go to library
+      if (!isProcessingIntent && currentPath == AppRoutes.intentLoading) {
+        return AppRoutes.library;
+      }
+
       // Handle PDF file URIs from intent (file:// or content://)
       final uri = state.uri;
       final path = uri.path;
@@ -78,6 +95,13 @@ GoRouter router(Ref ref) {
       return null;
     },
     routes: [
+      // Intent Loading Screen - shows while processing PDF from external apps
+      GoRoute(
+        path: AppRoutes.intentLoading,
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: IntentLoadingScreen()),
+      ),
+
       // Main Library Screen with Bottom Navigation
       GoRoute(
         path: AppRoutes.library,

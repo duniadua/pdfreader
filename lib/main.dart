@@ -10,6 +10,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'core/cache/cache_manager.dart';
 import 'core/data/providers/repository_providers.dart';
+import 'core/providers/intent_loading_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/pdf_intent_handler.dart';
@@ -117,6 +118,8 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
     final filePath = await intentHandler.getPendingFilePath();
 
     if (filePath != null) {
+      // Set loading state to show progress indicator
+      ref.read(intentLoadingProvider.notifier).setProcessing(true);
       _handleIncomingIntent(filePath);
     }
   }
@@ -129,10 +132,17 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
     final intentHandler = ref.read(pdfIntentHandlerProvider);
     await intentHandler.handlePdfIntent(filePath, (pdfId) {
       if (mounted) {
+        // Clear loading state before navigation
+        ref.read(intentLoadingProvider.notifier).setProcessing(false);
         final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
         ref.read(routerProvider).go(readerUrl);
       }
     });
+
+    // Clear loading state if navigation didn't happen (error case)
+    if (mounted) {
+      ref.read(intentLoadingProvider.notifier).setProcessing(false);
+    }
   }
 
   @override

@@ -308,8 +308,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   /// Build page scrubber slider
   Widget _buildPageScrubber(PdfDocument pdf) {
-    final scrollPosition = _totalPages > 0
-        ? (_currentPage - 1) / _totalPages
+    // Use (_totalPages - 1) so last page maps to slider value 1.0
+    final scrollPosition = _totalPages > 1
+        ? (_currentPage - 1) / (_totalPages - 1)
         : 0.0;
 
     return Padding(
@@ -327,7 +328,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               child: Slider(
                 value: scrollPosition,
                 onChanged: (value) {
-                  final newPage = (value * _totalPages).round() + 1;
+                  final newPage = (value * (_totalPages - 1)).round() + 1;
+                  // Update _currentPage immediately for responsive indicator
+                  setState(() {
+                    _currentPage = newPage.clamp(1, _totalPages);
+                  });
                   _pdfViewerController.jumpToPage(newPage);
                 },
               ),

@@ -243,7 +243,12 @@ Jawaban:`;
       console.log('📤 Sending prompt to AI...');
       console.log('Prompt length:', prompt.length, 'chars');
 
-      const response = await ai.generate({ prompt });
+      const response = await ai.generate({
+        prompt,
+        config: {
+          maxOutputTokens: 400,
+        },
+      });
 
       // Empty response check
       if (!response.text || response.text.trim().length === 0) {
@@ -251,15 +256,7 @@ Jawaban:`;
         throw new HttpsError('internal', ERROR_MESSAGES.EMPTY_RESPONSE);
       }
 
-      let trimmedResponse = response.text.trim();
-
-      // Response size limit
-      const MAX_RESPONSE_LENGTH = 5000;
-      if (trimmedResponse.length > MAX_RESPONSE_LENGTH) {
-        console.warn('⚠️ Response too long, truncating');
-        trimmedResponse = trimmedResponse.substring(0, MAX_RESPONSE_LENGTH) +
-          '\n\n[Respons dipotok karena terlalu panjang...]';
-      }
+      const trimmedResponse = response.text.trim();
 
       console.log('✅ chatFlow SUCCESS');
       console.log('  - Response length:', trimmedResponse.length);

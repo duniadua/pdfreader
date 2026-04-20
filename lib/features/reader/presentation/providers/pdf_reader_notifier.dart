@@ -58,6 +58,22 @@ class PdfReaderNotifier extends _$PdfReaderNotifier {
       loaded: (pdf) {
         // Get current page from progress for tracking
         final currentPage = pdf.progress?.currentPage ?? 0;
+
+        // Create new progress object with updated page
+        final updatedProgress = ReadingProgress(
+          documentId: pdfId,
+          currentPage: page,
+          lastReadAt: DateTime.now(),
+          scrollOffset: 0,
+        );
+
+        // Update in-memory state immediately (fixes scrubber position issue)
+        final updatedPdf = pdf.copyWith(
+          progress: updatedProgress,
+          lastOpenedAt: DateTime.now(),
+        );
+        state = PdfReaderState.loaded(updatedPdf);
+
         // Track page navigation
         AnalyticsService.instance.trackPageNavigation(
           pdfId: pdf.id,
@@ -65,7 +81,17 @@ class PdfReaderNotifier extends _$PdfReaderNotifier {
           toPage: page,
           navigationType: 'unknown',
         );
-        _repository.updateProgress(pdfId, page, 0);
+
+        // Persist to disk asynchronously (fire-and-forget is acceptable here)
+        _repository.updateProgress(pdfId, page, 0).then((result) {
+          result.when(
+            success: (_) => {}, // Successfully saved
+            failure: (error, _) {
+              // Log but don't affect user experience
+              // State is already updated in-memory
+            },
+          );
+        });
       },
       orElse: () {},
     );

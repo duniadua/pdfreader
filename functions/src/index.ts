@@ -3,204 +3,33 @@ import { googleAI, gemini } from '@genkit-ai/googleai';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
-import { randomUUID } from 'crypto';
-
-// Use Gemini 2.5 Flash Lite model (cost-optimized)
-const geminiModel = gemini('gemini-2.5-flash-lite');
-
-// Define secrets using Google Secret Manager
-const GOOGLE_AI_API_KEY = defineSecret('GOOGLE_AI_API_KEY');
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// Define secret for Google AI API Key
+const GOOGLE_AI_API_KEY = defineSecret('GOOGLE_AI_API_KEY');
+
+// Use Gemini 2.5 Flash Lite model (latest, cost-optimized)
+const geminiModel = gemini('gemini-2.5-flash-lite');
+
 // =============================================================================
-// UTILITY FUNCTIONS
+// ERROR MESSAGES (Indonesian)
 // =============================================================================
 
-/**
- * Sanitize content by removing dangerous characters and limiting length
- */
-function sanitizeContent(input: string, maxLength: number = 50000): string {
-  if (!input) return '';
+const ERROR_MESSAGES = {
+  UNAUTHENTICATED: '🔐 Anda harus login terlebih dahulu\n\nSilakan sign in dengan Google untuk menggunakan fitur AI.',
+  INVALID_PDF_TEXT: '📄 Konten PDF tidak valid\n\nPastikan file PDF dapat dibaca dan memiliki teks.',
+  INVALID_QUESTION: '❓ Mohon masukkan pertanyaan\n\nContoh: "Apa topik utama dokumen ini?"',
+  API_KEY_MISSING: '🔑 Konfigurasi AI belum siap\n\nSilakan hubungi administrator.',
+  AI_ERROR: '⚠️ Gagal mendapatkan respons dari AI\n\nSilakan coba lagi dalam beberapa saat.',
+  EMPTY_RESPONSE: '🤖 AI memberikan respons kosong\n\nSilakan coba pertanyaan lain.',
+  RATE_LIMIT: '⏱️ Terlalu banyak permintaan\n\nMohon tunggu sebentar sebelum mencoba lagi.',
+};
 
-  // Remove null bytes and control characters (except newlines/tabs)
-  let sanitized = input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
-
-  // Remove excessive whitespace sequences
-  sanitized = sanitized.replace(/[ \t]{20,}/g, ' ');
-
-  // Truncate if too long
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength);
-  }
-
-  return sanitized;
-}
-
-/**
- * Validate history item structure
- */
-function validateHistoryItem(item: any, index: number): void {
-  if (!item || typeof item !== 'object') {
-    throw new HttpsError(
-      'invalid-argument',
-      '💬 Chat history error (message #' + (index + 1) + ')\n\n' +
-      'One of the messages in your conversation has an invalid format.\n\n' +
-      'Please start a new conversation to continue.'
-    );
-  }
-
-  if (!item.role || typeof item.role !== 'string') {
-    throw new HttpsError(
-      'invalid-argument',
-      '💬 Chat history error (message #' + (index + 1) + ')\n\n' +
-      'A message in your conversation is missing its role information.\n\n' +
-      'Please start a new conversation to continue.'
-    );
-  }
-
-  if (!item.content || typeof item.content !== 'string') {
-    throw new HttpsError(
-      'invalid-argument',
-      '💬 Chat history error (message #' + (index + 1) + ')\n\n' +
-      'A message in your conversation is missing its text content.\n\n' +
-      'Please start a new conversation to continue.'
-    );
-  }
-
-  if (!['user', 'model', 'assistant'].includes(item.role)) {
-    throw new HttpsError(
-      'invalid-argument',
-      '💬 Chat history error (message #' + (index + 1) + ')\n\n' +
-      'A message in your conversation has an invalid type.\n\n' +
-      'Please start a new conversation to continue.'
-    );
-  }
-
-  if (item.content.length > 10000) {
-    const excessChars = item.content.length - 10000;
-    throw new HttpsError(
-      'invalid-argument',
-      '💬 One message in your conversation is too long!\n\n' +
-      'Message #' + (index + 1) + ' is ' + item.content.length + ' characters.\n' +
-      'Maximum: 10,000 characters per message.\n' +
-      'Excess: ' + excessChars + ' characters.\n\n' +
-      '💡 Try asking shorter questions or start a new conversation.'
-    );
-  }
-}
-
-/**
- * Rate limit check result
- */
-interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetTime: number;
-  limit: number;
-  message?: string;
-}
-
-/**
- * Check rate limit for a user
- */
-async function checkRateLimit(
-  uid: string,
-  db: admin.firestore.Firestore
-): Promise<RateLimitResult> {
-  const now = Date.now();
-  const oneMinuteMs = 60000;
-  const oneDayMs = 86400000;
-
-  // Rate limit configuration
-  const LIMITS = {
-    perMinute: 8,   // 8 requests per minute
-    perDay: 30,     // 30 requests per day
-  };
-
-  const userRef = db.collection('rate_limits').doc(uid);
-  const requestsRef = userRef.collection('requests');
-
-  // Check per-minute limit
-  const minuteSnapshot = await requestsRef
-    .where('timestamp', '>', now - oneMinuteMs)
-    .get();
-
-  const minuteCount = minuteSnapshot.size;
-  if (minuteCount >= LIMITS.perMinute) {
-    // Find oldest request to calculate reset time
-    const oldestDoc = minuteSnapshot.docs[0];
-    const resetTime = oldestDoc.data().timestamp + oneMinuteMs;
-    const waitSeconds = Math.ceil((resetTime - now) / 1000);
-
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: resetTime,
-      limit: LIMITS.perMinute,
-      message: `⏱️ You're sending messages too fast!\n\n` +
-        `Rate limit: ${LIMITS.perMinute} messages per minute\n` +
-        `Please wait: ${waitSeconds} seconds\n\n` +
-        `💡 Take your time to read the AI responses and formulate your next question. ` +
-        `This helps keep the service fast for everyone!`,
-    };
-  }
-
-  // Check per-day limit
-  const daySnapshot = await requestsRef
-    .where('timestamp', '>', now - oneDayMs)
-    .get();
-
-  const dayCount = daySnapshot.size;
-  if (dayCount >= LIMITS.perDay) {
-    // Find oldest request to calculate reset time (from start of day window)
-    const oldestDoc = daySnapshot.docs[0];
-    const resetTime = oldestDoc.data().timestamp + oneDayMs;
-    const waitMinutes = Math.ceil((resetTime - now) / 60000);
-
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: resetTime,
-      limit: LIMITS.perDay,
-      message: `🌙 You've reached your daily limit!\n\n` +
-        `Daily limit: ${LIMITS.perDay} messages per day\n` +
-        `Resets in: ${waitMinutes} minutes\n\n` +
-        `💡 Tips:\n` +
-        `• Combine multiple questions into one message\n` +
-        `• Be specific to get better answers\n` +
-        `• Your limit will reset tomorrow\n\n` +
-        `Thank you for using our service!`,
-    };
-  }
-
-  // Request is allowed
-  return {
-    allowed: true,
-    remaining: Math.min(
-      LIMITS.perMinute - minuteCount,
-      LIMITS.perDay - dayCount
-    ),
-    resetTime: now,
-    limit: LIMITS.perMinute,
-  };
-}
-
-/**
- * Log a rate limit request
- */
-async function logRateLimitRequest(
-  uid: string,
-  db: admin.firestore.Firestore
-): Promise<void> {
-  const now = Date.now();
-  await db
-    .collection('rate_limits')
-    .doc(uid)
-    .collection('requests')
-    .add({ timestamp: now });
-}
+// =============================================================================
+// SUMMARIZE FLOW
+// =============================================================================
 
 /**
  * Summarize PDF content
@@ -214,306 +43,202 @@ export const summarizeFlow = onCall(
     secrets: [GOOGLE_AI_API_KEY],
   },
   async (request) => {
+    console.log('=== summarizeFlow START ===');
+
     // Verify authentication
     if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'User must be authenticated');
+      console.error('❌ Unauthenticated request');
+      throw new HttpsError('unauthenticated', ERROR_MESSAGES.UNAUTHENTICATED);
     }
+
+    console.log('✅ Authenticated:', request.auth.uid);
 
     const { pdfText } = request.data;
 
     // Validate pdfText
     if (!pdfText || typeof pdfText !== 'string') {
-      throw new HttpsError('invalid-argument', 'pdfText is required and must be a string');
+      console.error('❌ Invalid pdfText');
+      throw new HttpsError('invalid-argument', ERROR_MESSAGES.INVALID_PDF_TEXT);
     }
 
-    // Edge case: Empty or whitespace-only pdfText
-    const trimmedText = pdfText.trim();
-    if (trimmedText.length === 0) {
-      throw new HttpsError('invalid-argument', 'pdfText cannot be empty');
-    }
-
-    // Limit PDF text length to avoid timeout
-    const maxLength = 50000; // ~50k characters
+    // Limit PDF text length
+    const maxLength = 50000;
     const truncatedText = pdfText.length > maxLength
-      ? pdfText.substring(0, maxLength) + '\n\n[Content truncated due to length...]'
+      ? pdfText.substring(0, maxLength) + '\n\n[Konten dipotong karena terlalu panjang...]'
       : pdfText;
 
-    // Edge case: Missing API key
-    if (!GOOGLE_AI_API_KEY.value()) {
-      console.error('Google AI API Key is missing');
-      throw new HttpsError('failed-precondition', 'Google AI API Key is not configured');
-    }
+    console.log('📊 PDF text length:', truncatedText.length);
 
     try {
+      // Get API key from secret
+      const apiKey = GOOGLE_AI_API_KEY.value();
+
+      if (!apiKey) {
+        console.error('❌ API Key not available');
+        throw new HttpsError('failed-precondition', ERROR_MESSAGES.API_KEY_MISSING);
+      }
+
+      console.log('✅ API Key available');
+
+      // Initialize AI with Google AI plugin
       const ai = genkit({
-        plugins: [googleAI({ apiKey: GOOGLE_AI_API_KEY.value() })],
+        plugins: [googleAI({ apiKey })],
         model: geminiModel,
       });
 
+      console.log('📤 Calling Gemini AI...');
+
       const response = await ai.generate({
-        prompt: `Summarize the following PDF content in a clear and concise way. Focus on the main points and key information:\n\n${truncatedText}`,
+        prompt: `Buat ringkasan yang jelas dan ringkas dari konten PDF berikut. Fokus pada poin-poin utama dan informasi kunci:\n\n${truncatedText}`,
       });
 
-      // Edge case: Empty response from AI
-      if (!response.text || response.text.trim().length === 0) {
-        console.error('AI returned empty response');
-        throw new HttpsError('internal', 'AI model returned an empty response');
+      const summary = response.text?.trim();
+
+      if (!summary || summary.length === 0) {
+        console.error('❌ Empty summary received');
+        throw new HttpsError('internal', ERROR_MESSAGES.EMPTY_RESPONSE);
       }
+
+      console.log(`✅ Summary generated (${summary.length} chars)`);
 
       return {
-        summary: response.text.trim(),
-        truncated: pdfText.length > maxLength,
+        summary,
         model: 'gemini-2.5-flash-lite',
-        timestamp: new Date().toISOString(),
-        originalLength: pdfText.length,
-        generatedLength: response.text.length,
+        truncated: pdfText.length > maxLength,
       };
     } catch (error: any) {
-      console.error('Error in summarizeFlow:', error?.message);
+      console.error('❌ Error in summarizeFlow:', error?.message || error);
 
-      // Handle specific error types
-      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-        throw new HttpsError('not-found', 'AI model is not available. Please check the model configuration.');
+      // Check if it's a Firestore error
+      if (error?.message?.includes('Firestore') || error?.message?.includes('Datastore')) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Konfigurasi database belum sesuai. Hubungi administrator.'
+        );
       }
 
-      if (error?.message?.includes('API key')) {
-        throw new HttpsError('failed-precondition', 'Google AI API key is invalid or missing');
-      }
-
-      throw new HttpsError('internal', `Failed to generate summary: ${error?.message || 'Unknown error'}`);
+      throw new HttpsError('internal', ERROR_MESSAGES.AI_ERROR);
     }
   }
 );
 
+// =============================================================================
+// CHAT FLOW
+// =============================================================================
+
 /**
  * Chat with PDF context
- * Expects: { pdfText: string, question: string, history: array }
+ * Expects: { pdfText: string, question: string, history?: Array<{role: string, content: string}> }
  * Returns: { response: string }
  */
 export const chatFlow = onCall(
   {
     maxInstances: 10,
     region: 'asia-southeast1',
+    timeoutSeconds: 120,
     secrets: [GOOGLE_AI_API_KEY],
-    timeoutSeconds: 55,
   },
   async (request) => {
-    const startTime = Date.now();
-    const requestId = randomUUID();
-
     console.log('=== chatFlow START ===');
-    console.log('Request ID:', requestId);
     console.log('Timestamp:', new Date().toISOString());
 
     // Authentication check
     if (!request.auth) {
       console.error('❌ Unauthenticated request');
-      throw new HttpsError('unauthenticated', 'User must be authenticated');
+      throw new HttpsError('unauthenticated', ERROR_MESSAGES.UNAUTHENTICATED);
     }
+
     console.log('✅ Authenticated:', request.auth.uid);
 
     const { pdfText, question, history = [] } = request.data;
-    const userId = request.auth.uid;
-
-    // Size limit validation
-    const MAX_REQUEST_SIZE = 100000; // 100KB total
-    const totalSize = JSON.stringify({ pdfText, question, history }).length;
-    if (totalSize > MAX_REQUEST_SIZE) {
-      console.error('❌ Request too large:', totalSize, 'chars');
-      throw new HttpsError(
-        'invalid-argument',
-        `📦 Your message is too large! (${Math.round(totalSize / 1000)}KB / 100KB limit)\n\n` +
-        `To fix this:\n` +
-        `• Shorten your question (max 1000 characters)\n` +
-        `• Reduce chat history (old messages count toward size)\n` +
-        `• Try asking a more specific question\n\n` +
-        `Tip: Start a new conversation if history is too long.`
-      );
-    }
 
     // PDF text validation
     if (!pdfText || typeof pdfText !== 'string') {
       console.error('❌ Invalid pdfText');
-      throw new HttpsError(
-        'invalid-argument',
-        '📄 No PDF content detected\n\n' +
-        'The PDF text appears to be missing or invalid. This could happen if:\n' +
-        '• The PDF file is corrupted\n' +
-        '• The PDF could not be read properly\n' +
-        '• The app is still processing the PDF\n\n' +
-        'Please try re-opening the PDF or select a different PDF file.'
-      );
-    }
-
-    // Sanitize PDF text
-    const sanitizedPdfText = sanitizeContent(pdfText, 30000);
-    if (sanitizedPdfText.trim().length === 0) {
-      console.error('❌ Empty pdfText after sanitization');
-      throw new HttpsError(
-        'invalid-argument',
-        '📄 This PDF appears to be empty\n\n' +
-        'The PDF content is empty or contains only special characters that cannot be read.\n\n' +
-        'Please try:\n' +
-        '• Opening a different PDF file\n' +
-        '• Checking if the PDF has readable text content\n' +
-        '• Converting scanned PDFs to searchable text first'
-      );
+      throw new HttpsError('invalid-argument', ERROR_MESSAGES.INVALID_PDF_TEXT);
     }
 
     // Question validation
     if (!question || typeof question !== 'string') {
       console.error('❌ Invalid question');
-      throw new HttpsError(
-        'invalid-argument',
-        '❓ Please enter a question\n\n' +
-        'You need to type a question about the PDF to get an answer.\n\n' +
-        'Examples of good questions:\n' +
-        '• "What is the main topic of this document?"\n' +
-        '• "Summarize the key findings"\n' +
-        '• "What does it say about [topic]?"'
-      );
+      throw new HttpsError('invalid-argument', ERROR_MESSAGES.INVALID_QUESTION);
     }
 
+    // Limit question length
     const MAX_QUESTION_LENGTH = 1000;
     if (question.length > MAX_QUESTION_LENGTH) {
-      console.error('❌ Question too long:', question.length);
-      const excessChars = question.length - MAX_QUESTION_LENGTH;
       throw new HttpsError(
         'invalid-argument',
-        `❓ Your question is too long!\n\n` +
-        `Current: ${question.length} characters\n` +
-        `Maximum: ${MAX_QUESTION_LENGTH} characters\n` +
-        `Excess: ${excessChars} characters\n\n` +
-        `💡 Try breaking your question into smaller parts or be more concise.\n\n` +
-        `Example: Instead of "What are all the findings related to X, Y, and Z..."\n` +
-        `Try: "What are the main findings?"`
+        `❓ Pertanyaan terlalu panjang (maksimum ${MAX_QUESTION_LENGTH} karakter)`
       );
-    }
-
-    // Sanitize question
-    const sanitizedQuestion = sanitizeContent(question, MAX_QUESTION_LENGTH);
-    if (sanitizedQuestion.trim().length === 0) {
-      console.error('❌ Empty question after sanitization');
-      throw new HttpsError(
-        'invalid-argument',
-        '❓ Your question contains only special characters\n\n' +
-        'Please enter a readable question using letters and numbers.\n\n' +
-        'The question should not contain only spaces, tabs, or special characters.'
-      );
-    }
-
-    // History validation
-    if (!Array.isArray(history)) {
-      console.error('❌ Invalid history format');
-      throw new HttpsError(
-        'invalid-argument',
-        '💬 Chat history format error\n\n' +
-        'The conversation history has an invalid format. This is likely a technical issue.\n\n' +
-        'Please try:\n' +
-        '• Refreshing the page\n' +
-        '• Starting a new conversation\n' +
-        '• If the problem persists, contact support'
-      );
-    }
-
-    const MAX_HISTORY_ITEMS = 50;
-    if (history.length > MAX_HISTORY_ITEMS) {
-      console.error('❌ Too many history items:', history.length);
-      throw new HttpsError(
-        'invalid-argument',
-        `💬 Conversation is too long!\n\n` +
-        `Your conversation has ${history.length} messages, but the maximum is ${MAX_HISTORY_ITEMS}.\n\n` +
-        `To continue:\n` +
-        `• Start a new conversation\n` +
-        `• The app will begin with a fresh context\n\n` +
-        `💡 Tip: For very long discussions, starting fresh often works better!`
-      );
-    }
-
-    // Validate each history item
-    for (let i = 0; i < history.length; i++) {
-      validateHistoryItem(history[i], i);
     }
 
     console.log('📊 Request info:');
-    console.log('  - Question length:', sanitizedQuestion.length);
-    console.log('  - PDF text length:', sanitizedPdfText.length);
-    console.log('  - History items:', history.length);
-    console.log('  - Total size:', totalSize, 'chars');
+    console.log('  - Question:', question);
+    console.log('  - PDF text length:', pdfText.length);
+    console.log('  - History items:', history?.length || 0);
 
-    // Rate limiting check
-    const db = admin.firestore();
-    const rateLimitCheck = await checkRateLimit(userId, db);
-
-    if (!rateLimitCheck.allowed) {
-      console.warn('⚠️ Rate limit exceeded:', rateLimitCheck.message);
-      throw new HttpsError(
-        'resource-exhausted',
-        rateLimitCheck.message || 'Rate limit exceeded. Please try again later.'
-      );
-    }
-
-    console.log('✅ Rate limit check passed');
-    console.log('  - Remaining:', rateLimitCheck.remaining);
-
-    // API key check
-    if (!GOOGLE_AI_API_KEY.value()) {
-      console.error('❌ Google AI API Key is missing');
-      throw new HttpsError(
-        'failed-precondition',
-        'Google AI API Key is not configured.'
-      );
-    }
-    console.log('✅ API Key available');
+    // Sanitize and limit PDF text
+    const MAX_PDF_LENGTH = 30000;
+    const sanitizedPdfText = pdfText.length > MAX_PDF_LENGTH
+      ? pdfText.substring(0, MAX_PDF_LENGTH) + '\n\n[Konten PDF dipotok...]'
+      : pdfText;
 
     try {
+      // Get API key from secret
+      const apiKey = GOOGLE_AI_API_KEY.value();
+
+      if (!apiKey) {
+        console.error('❌ API Key not available');
+        throw new HttpsError('failed-precondition', ERROR_MESSAGES.API_KEY_MISSING);
+      }
+
+      console.log('✅ API Key available');
       console.log('🤖 Initializing AI model...');
+
+      // Initialize AI with Google AI plugin
       const ai = genkit({
-        plugins: [googleAI({ apiKey: GOOGLE_AI_API_KEY.value() })],
+        plugins: [googleAI({ apiKey })],
         model: geminiModel,
       });
 
-      // Filter history: remove last user message (would be duplicate)
-      let filteredHistory = history;
-      if (history.length > 0) {
-        const lastMsg = history[history.length - 1];
-        if (lastMsg.role === 'user') {
-          console.log('🔄 Removing last user message from history (avoids duplicate)');
-          filteredHistory = history.slice(0, -1);
-        }
-      }
-      console.log('📜 History after filtering:', filteredHistory.length, 'items');
-
-      // Format chat history (limit to last 20 messages)
+      // Format chat history
       let conversationHistory = '';
-      if (filteredHistory.length > 0) {
-        const recentHistory = filteredHistory.slice(-20);
-        conversationHistory = '\n\n--- Previous conversation ---\n';
-        for (const msg of recentHistory) {
-          const role = msg.role === 'user' ? 'User' : 'Assistant';
-          conversationHistory += `${role}: ${msg.content}\n`;
+      if (history && Array.isArray(history) && history.length > 0) {
+        const chatHistory = history
+          .filter((msg: any) => msg.role === 'user' || msg.role === 'model')
+          .slice(-10); // Last 10 messages only
+
+        if (chatHistory.length > 0) {
+          conversationHistory = '\n\n--- Percakapan Sebelumnya ---\n';
+          for (const msg of chatHistory) {
+            const role = msg.role === 'user' ? 'Pengguna' : 'Asisten';
+            conversationHistory += `${role}: ${msg.content}\n`;
+          }
+          conversationHistory += '--- Akhir Percakapan Sebelumnya ---\n';
         }
-        conversationHistory += '--- End of previous conversation ---\n';
+        console.log('📜 Using', chatHistory.length, 'messages from history');
       }
 
       // Construct prompt
-      const prompt = `You are a helpful assistant answering questions about a PDF document.
+      const prompt = `Anda adalah asisten yang membantu menjawab pertanyaan tentang dokumen PDF.
 
-PDF DOCUMENT CONTENT:
+KONTEN PDF:
 ${sanitizedPdfText}
 
 ${conversationHistory}
 
-CURRENT QUESTION: ${sanitizedQuestion}
+PERTANYAAN SAAT INI: ${question}
 
-INSTRUCTIONS:
-1. Answer based on the PDF content provided above
-2. If the information is in the PDF, provide a clear and accurate answer
-3. If the information is NOT in the PDF, politely say: "I don't find that information in this PDF document."
-4. Keep your response concise and relevant
-5. You can refer to previous conversation context if relevant
+INSTRUKSI:
+1. Jawab berdasarkan konten PDF di atas
+2. Jika informasi ADA di PDF, berikan jawaban yang jelas dan akurat
+3. Jika informasi TIDAK ADA di PDF, katakan dengan sopan: "Maaf, informasi tersebut tidak saya temukan dalam dokumen PDF ini."
+4. Jawaban dalam Bahasa Indonesia
+5. Gunakan bullet point untuk daftar
+6. Pertahankan konteks dari percakapan sebelumnya jika relevan
 
-Answer:`;
+Jawaban:`;
 
       console.log('📤 Sending prompt to AI...');
       console.log('Prompt length:', prompt.length, 'chars');
@@ -523,10 +248,7 @@ Answer:`;
       // Empty response check
       if (!response.text || response.text.trim().length === 0) {
         console.error('❌ AI returned empty response');
-        throw new HttpsError(
-          'internal',
-          'AI model returned an empty response. Please try again.'
-        );
+        throw new HttpsError('internal', ERROR_MESSAGES.EMPTY_RESPONSE);
       }
 
       let trimmedResponse = response.text.trim();
@@ -536,59 +258,35 @@ Answer:`;
       if (trimmedResponse.length > MAX_RESPONSE_LENGTH) {
         console.warn('⚠️ Response too long, truncating');
         trimmedResponse = trimmedResponse.substring(0, MAX_RESPONSE_LENGTH) +
-          '\n\n[Response truncated due to length...]';
+          '\n\n[Respons dipotok karena terlalu panjang...]';
       }
-
-      // Log successful request
-      await logRateLimitRequest(userId, db);
-
-      const duration = Date.now() - startTime;
 
       console.log('✅ chatFlow SUCCESS');
       console.log('  - Response length:', trimmedResponse.length);
-      console.log('  - Duration:', duration, 'ms');
-      console.log('  - History items used:', filteredHistory.length);
-      console.log('  - Request ID:', requestId);
 
       return {
         response: trimmedResponse,
         model: 'gemini-2.5-flash-lite',
-        timestamp: new Date().toISOString(),
-        questionLength: sanitizedQuestion.length,
-        responseLength: trimmedResponse.length,
-        historyItems: filteredHistory.length,
-        requestId: requestId,
-        rateLimitRemaining: rateLimitCheck.remaining,
       };
     } catch (error: any) {
-      const duration = Date.now() - startTime;
-      console.error('❌ chatFlow ERROR after', duration, 'ms');
-      console.error('  - Request ID:', requestId);
-      console.error('  - Error type:', error?.constructor?.name || 'Unknown');
-      console.error('  - Error message:', error?.message);
+      console.error('❌ chatFlow ERROR:', error?.message || error);
 
-      // Handle specific error types
-      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-        throw new HttpsError(
-          'not-found',
-          'AI model is not available. Please try again.'
-        );
-      }
-
-      if (error?.message?.includes('API key')) {
+      // Check if it's a Firestore error
+      if (error?.message?.includes('Firestore') || error?.message?.includes('Datastore')) {
         throw new HttpsError(
           'failed-precondition',
-          'Google AI API key is invalid or missing.'
+          'Konfigurasi database belum sesuai. Hubungi administrator.'
         );
       }
 
-      throw new HttpsError(
-        'internal',
-        `Failed to generate response: ${error?.message || 'Unknown error'}`
-      );
+      throw new HttpsError('internal', ERROR_MESSAGES.AI_ERROR);
     }
   }
 );
+
+// =============================================================================
+// EXTRACT FLOW
+// =============================================================================
 
 /**
  * Extract specific information from PDF
@@ -602,87 +300,99 @@ export const extractFlow = onCall(
     secrets: [GOOGLE_AI_API_KEY],
   },
   async (request) => {
+    console.log('=== extractFlow START ===');
+
+    // Verify authentication
     if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'User must be authenticated');
+      console.error('❌ Unauthenticated request');
+      throw new HttpsError('unauthenticated', ERROR_MESSAGES.UNAUTHENTICATED);
     }
+
+    console.log('✅ Authenticated:', request.auth.uid);
 
     const { pdfText, prompt } = request.data;
 
     if (!pdfText || typeof pdfText !== 'string') {
-      throw new HttpsError('invalid-argument', 'pdfText is required');
-    }
-
-    // Edge case: Empty pdfText
-    if (pdfText.trim().length === 0) {
-      throw new HttpsError('invalid-argument', 'pdfText cannot be empty');
+      console.error('❌ Invalid pdfText');
+      throw new HttpsError('invalid-argument', ERROR_MESSAGES.INVALID_PDF_TEXT);
     }
 
     if (!prompt || typeof prompt !== 'string') {
-      throw new HttpsError('invalid-argument', 'prompt is required');
+      console.error('❌ Invalid prompt');
+      throw new HttpsError('invalid-argument', 'Prompt tidak valid');
     }
 
-    // Edge case: Empty prompt
-    if (prompt.trim().length === 0) {
-      throw new HttpsError('invalid-argument', 'prompt cannot be empty');
-    }
+    console.log('📊 Request info:');
+    console.log('  - Prompt length:', prompt.length);
+    console.log('  - PDF text length:', pdfText.length);
 
     // Limit context length
     const maxLength = 50000;
     const truncatedText = pdfText.length > maxLength
-      ? pdfText.substring(0, maxLength) + '\n\n[Content truncated...]'
+      ? pdfText.substring(0, maxLength) + '\n\n[Konten dipotok...]'
       : pdfText;
 
-    // Edge case: Missing API key
-    if (!GOOGLE_AI_API_KEY.value()) {
-      console.error('Google AI API Key is missing');
-      throw new HttpsError('failed-precondition', 'Google AI API Key is not configured');
-    }
-
     try {
+      // Get API key from secret
+      const apiKey = GOOGLE_AI_API_KEY.value();
+
+      if (!apiKey) {
+        console.error('❌ API Key not available');
+        throw new HttpsError('failed-precondition', ERROR_MESSAGES.API_KEY_MISSING);
+      }
+
+      console.log('✅ API Key available');
+
+      // Initialize AI with Google AI plugin
       const ai = genkit({
-        plugins: [googleAI({ apiKey: GOOGLE_AI_API_KEY.value() })],
+        plugins: [googleAI({ apiKey })],
         model: geminiModel,
       });
 
-      const fullPrompt = `Extract the requested information from the following PDF content:
+      const extractionPrompt = `Ekstrak informasi yang diminta dari konten PDF berikut:
 
 ${truncatedText}
 
-Request: ${prompt}
+Permintaan: ${prompt}
 
-Provide the extracted information in a clear, structured format.`;
+Berikan informasi yang diekstrak dalam format yang jelas dan terstruktur.`;
 
-      const response = await ai.generate({ prompt: fullPrompt });
+      console.log('📤 Calling Gemini AI...');
 
-      // Edge case: Empty response
-      if (!response.text || response.text.trim().length === 0) {
-        console.error('AI returned empty response');
-        throw new HttpsError('internal', 'AI model returned an empty response');
+      const response = await ai.generate({ prompt: extractionPrompt });
+
+      const data = response.text?.trim();
+
+      if (!data || data.length === 0) {
+        console.error('❌ Empty extraction received');
+        throw new HttpsError('internal', ERROR_MESSAGES.EMPTY_RESPONSE);
       }
+
+      console.log(`✅ Extraction completed (${data.length} chars)`);
 
       return {
-        data: response.text.trim(),
+        data,
         model: 'gemini-2.5-flash-lite',
-        timestamp: new Date().toISOString(),
-        originalLength: pdfText.length,
-        extractedLength: response.text.length,
       };
     } catch (error: any) {
-      console.error('Error in extractFlow:', error?.message);
+      console.error('❌ Error in extractFlow:', error?.message || error);
 
-      // Handle specific error types
-      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-        throw new HttpsError('not-found', 'AI model is not available');
+      // Check if it's a Firestore error
+      if (error?.message?.includes('Firestore') || error?.message?.includes('Datastore')) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Konfigurasi database belum sesuai. Hubungi administrator.'
+        );
       }
 
-      if (error?.message?.includes('API key')) {
-        throw new HttpsError('failed-precondition', 'Google AI API key is invalid');
-      }
-
-      throw new HttpsError('internal', `Failed to extract information: ${error?.message}`);
+      throw new HttpsError('internal', ERROR_MESSAGES.AI_ERROR);
     }
   }
 );
+
+// =============================================================================
+// HEALTH CHECK
+// =============================================================================
 
 /**
  * Health check function (no auth required)
@@ -696,7 +406,7 @@ export const healthCheck = onCall(
     return {
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
+      version: '4.0.0',
       model: 'gemini-2.5-flash-lite',
       region: 'asia-southeast1',
       features: ['summarizeFlow', 'extractFlow', 'chatFlow'],

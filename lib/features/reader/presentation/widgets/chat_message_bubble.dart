@@ -8,10 +8,16 @@ import '../../../../core/theme/app_theme.dart';
 
 /// Widget displaying a single chat message bubble.
 class ChatMessageBubble extends StatelessWidget {
-  const ChatMessageBubble({super.key, required this.message, this.onCopy});
+  const ChatMessageBubble({
+    super.key,
+    required this.message,
+    this.onCopy,
+    this.onRetry,
+  });
 
   final ChatMessage message;
   final VoidCallback? onCopy;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -51,16 +57,18 @@ class ChatMessageBubble extends StatelessWidget {
                         color: _getBubbleColor(context),
                         borderRadius: _getBorderRadius(isUser),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: message.isFailed
+                              ? Colors.red.shade300
+                              : Colors.grey.withValues(alpha: 0.2),
                         ),
                       ),
                       child: isUser
                           ? _buildUserMessage(context)
                           : _buildAiMessage(context),
                     ),
-                    // Copy button for non-empty messages
+                    // Action buttons
                     if (message.content.isNotEmpty && !message.isProcessing)
-                      _buildCopyButton(context),
+                      _buildActionButtons(context),
                   ],
                 ),
               ),
@@ -86,21 +94,63 @@ class ChatMessageBubble extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: message.isUser
+        color: message.isFailed
+            ? Colors.red.withValues(alpha: 0.1)
+            : message.isUser
             ? AppTheme.primary.withValues(alpha: 0.1)
             : Colors.amber.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(
-        message.isUser ? Icons.person : Icons.auto_awesome,
+        message.isFailed
+            ? Icons.error_outline
+            : message.isUser
+            ? Icons.person
+            : Icons.auto_awesome,
         size: 18,
-        color: message.isUser ? AppTheme.primary : Colors.amber,
+        color: message.isFailed
+            ? Colors.red.shade400
+            : message.isUser
+            ? AppTheme.primary
+            : Colors.amber,
       ),
     );
   }
 
-  /// Build user message text
+  /// Build user message text with failed indicator
   Widget _buildUserMessage(BuildContext context) {
+    if (message.isFailed) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            message.content,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              decoration: TextDecoration.lineThrough,
+              decorationColor: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 12, color: Colors.red.shade400),
+              const SizedBox(width: 4),
+              Text(
+                'Gagal mendapat respons',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.red.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
     return Text(
       message.content,
       style: TextStyle(
@@ -152,6 +202,50 @@ class ChatMessageBubble extends StatelessWidget {
     );
   }
 
+  /// Build action buttons
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Retry button: hanya untuk failed user messages
+        if (message.isUser && message.isFailed && onRetry != null)
+          _buildRetryButton(context),
+        // Copy button: hanya untuk AI messages
+        if (!message.isUser) _buildCopyButton(context),
+      ],
+    );
+  }
+
+  /// Build retry button (shown on failed user messages)
+  Widget _buildRetryButton(BuildContext context) {
+    return InkWell(
+      onTap: onRetry,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.refresh, size: 14, color: Colors.red.shade400),
+            const SizedBox(width: 4),
+            Text(
+              'Retry',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.red.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Build copy button
   Widget _buildCopyButton(BuildContext context) {
     return InkWell(
@@ -186,6 +280,7 @@ class ChatMessageBubble extends StatelessWidget {
   /// Get bubble background color
   Color _getBubbleColor(BuildContext context) {
     if (message.isUser) {
+      if (message.isFailed) return Colors.red.shade50;
       return AppTheme.primary.withValues(alpha: 0.1);
     }
     return Theme.of(context).colorScheme.surface;

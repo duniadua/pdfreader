@@ -1,8 +1,8 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/test'],
-  testMatch: ['**/?(*.)+(spec|test).ts'],
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
@@ -10,10 +10,9 @@ module.exports = {
     'node_modules/(?!(genkit|@genkit-ai)/)',
   ],
   collectCoverageFrom: [
-    'lib/**/*.ts',
-    '!lib/**/*.d.ts',
-    '!lib/**/*.freezed.ts',
-    '!lib/**/*.g.dart',
+    'src/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.d.ts',
   ],
   coverageDirectory: 'coverage',
   verbose: true,

@@ -21,6 +21,9 @@ class ChatMessage with _$ChatMessage {
     /// Whether this message is currently being processed
     @Default(false) bool isProcessing,
 
+    /// Whether this message failed to get a response
+    @Default(false) bool isFailed,
+
     /// Error message if processing failed
     String? error,
   }) = _ChatMessage;
@@ -53,6 +56,17 @@ class ChatMessage with _$ChatMessage {
       isUser: true,
       timestamp: DateTime.now(),
       isProcessing: true,
+    );
+  }
+
+  /// Creates a failed user message (no AI response received)
+  factory ChatMessage.failed(String content, {String? id}) {
+    return ChatMessage(
+      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      isUser: true,
+      timestamp: DateTime.now(),
+      isFailed: true,
     );
   }
 }

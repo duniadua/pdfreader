@@ -6,7 +6,7 @@ part of 'pdf_reader_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pdfReaderNotifierHash() => r'458d1952e181fe30ed04fd4c7a20198483d044f4';
+String _$pdfReaderNotifierHash() => r'a4974d7b3fedd6e4968827ee6c81cc45f8573963';
 
 /// Copied from Dart SDK
 class _SystemHash {

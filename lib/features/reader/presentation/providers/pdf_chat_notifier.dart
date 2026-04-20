@@ -443,48 +443,81 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     // Save user message to database
     await _saveMessage(userMessage);
 
-    try {
-      final textToUse = state.extractedText ?? '';
-      if (textToUse.isEmpty) {
-        throw Exception('No PDF content available for analysis');
+    // Automatic retry: up to 4 retries with 60s delay
+    const maxRetries = 4;
+    const retryDelay = Duration(seconds: 60);
+
+    for (int attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          AppLogger.i('🔄 Auto-retry attempt $attempt/$maxRetries...');
+          await Future.delayed(retryDelay);
+          // Re-set loading state for retry
+          state = PdfChatState.visible(
+            currentPdfPath: state.currentPdfPath,
+            messages: state.messages,
+            isLoading: true,
+            extractedText: state.extractedText,
+          );
+        }
+
+        final textToUse = state.extractedText ?? '';
+        if (textToUse.isEmpty) {
+          throw Exception('No PDF content available for analysis');
+        }
+
+        final response = await _aiService!.chatWithDocument(
+          textToUse,
+          message,
+          state.messages,
+        );
+
+        final aiMessage = ChatMessage.ai(response);
+        final allMessages = [...updatedMessages, aiMessage];
+
+        // Cache updated messages
+        final pdfId = _currentPdfId ?? _currentPdf?.id;
+        if (pdfId != null) {
+          _addToCache(_messagesCache, pdfId, allMessages);
+        }
+
+        state = PdfChatState.visible(
+          currentPdfPath: state.currentPdfPath,
+          messages: allMessages,
+          extractedText: state.extractedText,
+        );
+
+        // Save AI message to database
+        await _saveMessage(aiMessage);
+
+        // Update session metadata
+        await _updateSessionMetadata();
+
+        AppLogger.i('Chat message sent and response received');
+        return; // Success — exit retry loop
+      } catch (e, stackTrace) {
+        AppLogger.e(
+          'Attempt ${attempt + 1}/${maxRetries + 1} failed',
+          e,
+          stackTrace,
+        );
+
+        if (attempt >= maxRetries) {
+          // All retries exhausted — mark as failed
+          AppLogger.e('❌ All retries exhausted for message: $message');
+          final failedMsg = ChatMessage.failed(message, id: userMessage.id);
+          final failedMessages = [
+            ...state.messages.sublist(0, state.messages.length - 1),
+            failedMsg,
+          ];
+
+          state = PdfChatState.visible(
+            currentPdfPath: state.currentPdfPath,
+            messages: failedMessages,
+            extractedText: state.extractedText,
+          );
+        }
       }
-
-      final response = await _aiService!.chatWithDocument(
-        textToUse,
-        message,
-        state.messages,
-      );
-
-      final aiMessage = ChatMessage.ai(response);
-      final allMessages = [...updatedMessages, aiMessage];
-
-      // Cache updated messages
-      final pdfId = _currentPdfId ?? _currentPdf?.id;
-      if (pdfId != null) {
-        _addToCache(_messagesCache, pdfId, allMessages);
-      }
-
-      state = PdfChatState.visible(
-        currentPdfPath: state.currentPdfPath,
-        messages: allMessages,
-        extractedText: state.extractedText,
-      );
-
-      // Save AI message to database
-      await _saveMessage(aiMessage);
-
-      // Update session metadata
-      await _updateSessionMetadata();
-
-      AppLogger.i('Chat message sent and response received');
-    } catch (e, stackTrace) {
-      AppLogger.e('Failed to send chat message', e, stackTrace);
-      state = PdfChatState.visible(
-        currentPdfPath: state.currentPdfPath,
-        messages: updatedMessages,
-        error: 'Failed to get response. Please try again.',
-        extractedText: state.extractedText,
-      );
     }
   }
 
@@ -785,29 +818,29 @@ class PdfChatNotifier extends _$PdfChatNotifier {
   }
 
   /// Retry the last failed operation
-  Future<void> retryLastOperation() async {
-    if (!state.isVisible || state.error == null) return;
+  /// Retry a specific failed user message by its ID
+  Future<void> retryMessage(String messageId) async {
+    if (!state.isVisible) return;
 
-    // Get the last user message to retry
-    final lastUserMessage = state.messages.reversed
-        .where((m) => m.isUser)
-        .firstOrNull;
-    if (lastUserMessage != null) {
-      // Remove the failed messages and retry
-      final messagesToKeep = <ChatMessage>[];
-      for (final message in state.messages) {
-        if (message == lastUserMessage) break;
-        messagesToKeep.add(message);
-      }
+    // Find the failed user message
+    final failedIndex = state.messages.indexWhere(
+      (m) => m.id == messageId && m.isFailed,
+    );
+    if (failedIndex == -1) return;
 
-      state = PdfChatState.visible(
-        currentPdfPath: state.currentPdfPath,
-        messages: messagesToKeep,
-        extractedText: state.extractedText,
-      );
+    final failedMessage = state.messages[failedIndex];
 
-      await sendMessage(lastUserMessage.content);
-    }
+    // Remove all messages from the failed message onward
+    final messagesToKeep = state.messages.sublist(0, failedIndex);
+
+    state = PdfChatState.visible(
+      currentPdfPath: state.currentPdfPath,
+      messages: messagesToKeep,
+      extractedText: state.extractedText,
+    );
+
+    // Re-send the failed message
+    await sendMessage(failedMessage.content);
   }
 
   /// Clear cached PDF path for a specific PDF

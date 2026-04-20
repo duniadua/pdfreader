@@ -240,6 +240,14 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
   /// Build messages list
   Widget _buildMessagesList(BuildContext context, PdfChatState chatState) {
     final messages = chatState.messages;
+    final error = chatState.error;
+
+    // Show error message if present
+    if (error != null && error.isNotEmpty) {
+      return _buildErrorView(context, error, () {
+        ref.read(pdfChatNotifierProvider(widget.pdfId).notifier).dismissError();
+      });
+    }
 
     if (messages.isEmpty &&
         !chatState.isLoading &&
@@ -249,18 +257,18 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        bottom: 8,
-        top: 8,
-      ),
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 8),
       itemCount: messages.length + (chatState.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < messages.length) {
           return ChatMessageBubble(
             key: ValueKey(messages[index].id),
             message: messages[index],
+            onRetry: messages[index].isUser && messages[index].isFailed
+                ? () => ref
+                      .read(pdfChatNotifierProvider(widget.pdfId).notifier)
+                      .retryMessage(messages[index].id)
+                : null,
           );
         } else {
           // Show loading indicator at the end
@@ -283,6 +291,68 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
           );
         }
       },
+    );
+  }
+
+  /// Build error view when chat fails
+  Widget _buildErrorView(
+    BuildContext context,
+    String error,
+    VoidCallback onDismiss,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to get response',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.close, size: 18),
+                  label: const Text('Dismiss'),
+                  onPressed: onDismiss,
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Retry'),
+                  onPressed: () {
+                    // Find the last failed user message to retry
+                    final notifier = ref.read(
+                      pdfChatNotifierProvider(widget.pdfId).notifier,
+                    );
+                    final failedMsg = ref
+                        .read(pdfChatNotifierProvider(widget.pdfId))
+                        .messages
+                        .lastWhere(
+                          (m) => m.isFailed,
+                          orElse: () => ChatMessage.user(''),
+                        );
+                    if (failedMsg.content.isNotEmpty) {
+                      notifier.retryMessage(failedMsg.id);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

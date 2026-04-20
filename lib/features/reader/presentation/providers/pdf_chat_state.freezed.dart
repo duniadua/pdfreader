@@ -32,6 +32,9 @@ mixin _$ChatMessage {
   /// Whether this message is currently being processed
   bool get isProcessing => throw _privateConstructorUsedError;
 
+  /// Whether this message failed to get a response
+  bool get isFailed => throw _privateConstructorUsedError;
+
   /// Error message if processing failed
   String? get error => throw _privateConstructorUsedError;
 
@@ -55,6 +58,7 @@ abstract class $ChatMessageCopyWith<$Res> {
     bool isUser,
     DateTime timestamp,
     bool isProcessing,
+    bool isFailed,
     String? error,
   });
 }
@@ -79,6 +83,7 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
     Object? isUser = null,
     Object? timestamp = null,
     Object? isProcessing = null,
+    Object? isFailed = null,
     Object? error = freezed,
   }) {
     return _then(
@@ -102,6 +107,10 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
             isProcessing: null == isProcessing
                 ? _value.isProcessing
                 : isProcessing // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isFailed: null == isFailed
+                ? _value.isFailed
+                : isFailed // ignore: cast_nullable_to_non_nullable
                       as bool,
             error: freezed == error
                 ? _value.error
@@ -128,6 +137,7 @@ abstract class _$$ChatMessageImplCopyWith<$Res>
     bool isUser,
     DateTime timestamp,
     bool isProcessing,
+    bool isFailed,
     String? error,
   });
 }
@@ -151,6 +161,7 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
     Object? isUser = null,
     Object? timestamp = null,
     Object? isProcessing = null,
+    Object? isFailed = null,
     Object? error = freezed,
   }) {
     return _then(
@@ -175,6 +186,10 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
             ? _value.isProcessing
             : isProcessing // ignore: cast_nullable_to_non_nullable
                   as bool,
+        isFailed: null == isFailed
+            ? _value.isFailed
+            : isFailed // ignore: cast_nullable_to_non_nullable
+                  as bool,
         error: freezed == error
             ? _value.error
             : error // ignore: cast_nullable_to_non_nullable
@@ -193,6 +208,7 @@ class _$ChatMessageImpl implements _ChatMessage {
     required this.isUser,
     required this.timestamp,
     this.isProcessing = false,
+    this.isFailed = false,
     this.error,
   });
 
@@ -217,13 +233,18 @@ class _$ChatMessageImpl implements _ChatMessage {
   @JsonKey()
   final bool isProcessing;
 
+  /// Whether this message failed to get a response
+  @override
+  @JsonKey()
+  final bool isFailed;
+
   /// Error message if processing failed
   @override
   final String? error;
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, content: $content, isUser: $isUser, timestamp: $timestamp, isProcessing: $isProcessing, error: $error)';
+    return 'ChatMessage(id: $id, content: $content, isUser: $isUser, timestamp: $timestamp, isProcessing: $isProcessing, isFailed: $isFailed, error: $error)';
   }
 
   @override
@@ -238,6 +259,8 @@ class _$ChatMessageImpl implements _ChatMessage {
                 other.timestamp == timestamp) &&
             (identical(other.isProcessing, isProcessing) ||
                 other.isProcessing == isProcessing) &&
+            (identical(other.isFailed, isFailed) ||
+                other.isFailed == isFailed) &&
             (identical(other.error, error) || other.error == error));
   }
 
@@ -249,6 +272,7 @@ class _$ChatMessageImpl implements _ChatMessage {
     isUser,
     timestamp,
     isProcessing,
+    isFailed,
     error,
   );
 
@@ -268,6 +292,7 @@ abstract class _ChatMessage implements ChatMessage {
     required final bool isUser,
     required final DateTime timestamp,
     final bool isProcessing,
+    final bool isFailed,
     final String? error,
   }) = _$ChatMessageImpl;
 
@@ -290,6 +315,10 @@ abstract class _ChatMessage implements ChatMessage {
   /// Whether this message is currently being processed
   @override
   bool get isProcessing;
+
+  /// Whether this message failed to get a response
+  @override
+  bool get isFailed;
 
   /// Error message if processing failed
   @override

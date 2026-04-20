@@ -25,7 +25,7 @@ final pdfAIServiceProvider = AutoDisposeProvider<PdfAIService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef PdfAIServiceRef = AutoDisposeProviderRef<PdfAIService>;
-String _$pdfChatNotifierHash() => r'8f6a1e1054111a81ea972b8f33f1b57874e8bf33';
+String _$pdfChatNotifierHash() => r'4087e1fcf7611f4154f163a8471661acc6ea126e';
 
 /// Copied from Dart SDK
 class _SystemHash {

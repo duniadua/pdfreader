@@ -432,8 +432,51 @@ class PdfAIService with AiServiceLogging {
 
       AppLogger.i('✂️  Truncated text length: ${truncatedText.length} chars');
 
+      // Filter history to only include actual chat messages (exclude summary/keypoints)
+      // Only include messages where user asked a question, not "Generate summary" etc.
+      final filteredHistory = history.where((msg) {
+        // Include user messages that look like actual questions (not quick actions)
+        if (msg.isUser) {
+          final content = msg.content.toLowerCase().trim();
+          // Exclude quick action messages
+          if (content.startsWith('generate a summary') ||
+              content.startsWith('what are the key points') ||
+              content.startsWith('extract and summarize')) {
+            return false;
+          }
+          // Include if it's a question or actual chat
+          return content.contains('?') ||
+              content.length < 200; // Short messages are likely questions
+        }
+        // Only include assistant responses that are actual chat (not summaries)
+        if (!msg.isUser) {
+          final content = msg.content.toLowerCase();
+          // Exclude summary/keypoint responses (they start with headings/bullets)
+          if (content.startsWith('##') || // Markdown headings
+              content.startsWith('summary:') ||
+              content.startsWith('key points') ||
+              content.startsWith('•')) {
+            return false;
+          }
+          // Exclude very long AI responses (likely summaries/extracts)
+          if (content.length > 1000) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
+
+      AppLogger.i('📝 Filtered history: ${filteredHistory.length} messages (from ${history.length} total)');
+
+      // Limit to last 10 messages to avoid overwhelming the context
+      final limitedHistory = filteredHistory.length > 10
+          ? filteredHistory.sublist(filteredHistory.length - 10)
+          : filteredHistory;
+
+      AppLogger.i('📝 Sending last ${limitedHistory.length} messages as history');
+
       // Convert chat history to JSON format
-      final historyJson = history
+      final historyJson = limitedHistory
           .map(
             (m) => {'role': m.isUser ? 'user' : 'model', 'content': m.content},
           )

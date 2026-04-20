@@ -38,6 +38,10 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
 
+  // Flags to prevent state reset and duplicate updates
+  bool _isInitialized = false;
+  bool _isDragging = false;
+
   @override
   void initState() {
     super.initState();
@@ -159,9 +163,26 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
     return state.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       loaded: (pdf) {
-        // Initialize page tracking from PDF
-        _totalPages = pdf.totalPages;
-        _currentPage = pdf.progress?.currentPage ?? 1;
+        // Initialize page tracking from PDF ONLY ONCE (prevent reset on rebuild)
+        if (!_isInitialized) {
+          _totalPages = pdf.totalPages;
+          _currentPage = pdf.progress?.currentPage ?? 1;
+          _isInitialized = true;
+
+          // Wait a frame to ensure PDF viewer is fully loaded, then sync with controller
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _totalPages = _pdfViewerController.pageCount > 0
+                    ? _pdfViewerController.pageCount
+                    : pdf.totalPages;
+                if (_currentPage > _totalPages) {
+                  _currentPage = _totalPages;
+                }
+              });
+            }
+          });
+        }
 
         return Stack(
           children: [
@@ -176,11 +197,14 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                   ref
                       .read(pdfReaderNotifierProvider(widget.pdfId).notifier)
                       .onPageChanged(pageDetails.newPageNumber);
-                  // Update local state for page indicator
-                  if (mounted) {
+
+                  // Skip local update during slider drag (slider already handled it)
+                  if (!_isDragging && mounted) {
                     setState(() {
                       _currentPage = pageDetails.newPageNumber;
-                      _totalPages = _pdfViewerController.pageCount;
+                      _totalPages = _pdfViewerController.pageCount > 0
+                          ? _pdfViewerController.pageCount
+                          : pdf.totalPages;
                     });
                   }
                 },
@@ -188,6 +212,16 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                 canShowScrollStatus: true,
                 pageSpacing: 4,
                 initialPageNumber: pdf.progress?.currentPage ?? 1,
+                onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+                  if (mounted) {
+                    setState(() {
+                      _totalPages = details.document.pages.count;
+                      if (_currentPage > _totalPages) {
+                        _currentPage = _totalPages;
+                      }
+                    });
+                  }
+                },
               ),
             ),
             // Page indicator overlay
@@ -308,16 +342,20 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   /// Build page scrubber slider
   Widget _buildPageScrubber(PdfDocument pdf) {
+    // Use actual PDF page count if available, otherwise use document total pages
+    final currentPage = _currentPage;
+    final totalPages = _totalPages > 0 ? _totalPages : pdf.totalPages;
+
     // Use (_totalPages - 1) so last page maps to slider value 1.0
-    final scrollPosition = _totalPages > 1
-        ? (_currentPage - 1) / (_totalPages - 1)
+    final scrollPosition = totalPages > 1
+        ? (currentPage - 1) / (totalPages - 1)
         : 0.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
         children: [
-          Text('$_currentPage', style: const TextStyle(fontSize: 10)),
+          Text('$currentPage', style: const TextStyle(fontSize: 10)),
           Expanded(
             child: SliderTheme(
               data: SliderThemeData(
@@ -328,17 +366,28 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
               child: Slider(
                 value: scrollPosition,
                 onChanged: (value) {
-                  final newPage = (value * (_totalPages - 1)).round() + 1;
-                  // Update _currentPage immediately for responsive indicator
+                  _isDragging = true;
+                  final newPage = (value * (totalPages - 1)).round() + 1;
                   setState(() {
-                    _currentPage = newPage.clamp(1, _totalPages);
+                    _currentPage = newPage.clamp(1, totalPages);
                   });
                   _pdfViewerController.jumpToPage(newPage);
+                },
+                onChangeEnd: (value) {
+                  _isDragging = false;
+                  // Sync with actual page after drag ends
+                  if (mounted) {
+                    setState(() {
+                      _currentPage = _pdfViewerController.pageNumber > 0
+                          ? _pdfViewerController.pageNumber
+                          : _currentPage;
+                    });
+                  }
                 },
               ),
             ),
           ),
-          Text('$_totalPages', style: const TextStyle(fontSize: 10)),
+          Text('$totalPages', style: const TextStyle(fontSize: 10)),
         ],
       ),
     );

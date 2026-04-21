@@ -237,6 +237,7 @@ INSTRUKSI:
 4. Jawaban dalam Bahasa Indonesia
 5. Gunakan bullet point untuk daftar
 6. Pertahankan konteks dari percakapan sebelumnya jika relevan
+7. Pastikan seluruh penjelasan Anda selesai sepenuhnya sebelum mencapai batas 350 token agar tidak terpotong. Jika informasi terlalu banyak, rangkum menjadi poin-poin terpenting.
 
 Jawaban:`;
 
@@ -246,7 +247,7 @@ Jawaban:`;
       const response = await ai.generate({
         prompt,
         config: {
-          maxOutputTokens: 400,
+          maxOutputTokens: 1000,
         },
       });
 

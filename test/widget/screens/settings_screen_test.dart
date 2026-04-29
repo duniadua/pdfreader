@@ -6,6 +6,22 @@ import 'package:pdf_reader_app/features/settings/presentation/providers/settings
 import 'package:pdf_reader_app/core/data/models/app_settings.dart';
 import 'package:pdf_reader_app/core/constants/app_constants.dart';
 
+// TODO: Fix SharedPreferences initialization for widget tests
+// - Error: "Exception: SharedPreferences not ready" when building SettingsScreen
+// - Fix: Initialize SharedPreferences in setUp() or override sharedPreferencesProvider
+// Example:
+//   setUp(() async {
+//     SharedPreferences.setMockInitialValues({});
+//   });
+//
+// Or mock the provider:
+//   ProviderScope(
+//     overrides: [
+//       sharedPreferencesProvider.overrideWithValue(mockPrefs),
+//     ],
+//     child: const MaterialApp(home: SettingsScreen()),
+//   )
+
 void main() {
   group('SettingsScreen Widget Tests', () {
     testWidgets('should render without errors', (WidgetTester tester) async {

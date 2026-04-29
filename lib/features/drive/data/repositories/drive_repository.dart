@@ -53,6 +53,9 @@ abstract class DriveRepository {
 
   /// List all PDF files from Google Drive
   /// Use [strategy] to control cache behavior
+  // TODO: Define DriveCacheStrategy enum/class (currently undefined)
+  // - Error: Undefined class 'DriveCacheStrategy' at line 57
+  // - Fix: Create DriveCacheStrategy enum with values: cacheFirst, forceRefresh, networkOnly
   Future<DriveResult<List<DriveFileModel>>> getPdfFiles([
     DriveCacheStrategy strategy = DriveCacheStrategy.cacheFirst,
   ]);

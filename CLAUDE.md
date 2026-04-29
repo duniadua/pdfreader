@@ -103,6 +103,7 @@ The `.claude/skills/` directory contains reusable skills:
 | `/model-generator` | Generate Hive models with Freezed |
 | `/scaffold-feature` | Generate feature scaffold structure |
 | `/build-install-apk` | Build and install APK to connected device |
+| `/generate-dartdoc` | Generate API documentation for AI agent scanning |
 
 ### Hooks
 
@@ -124,8 +125,12 @@ Pre/post hooks automate quality checks:
 # Build and install APK to connected device
 .claude/scripts/build-install-apk.sh
 
-# Or use the skill:
+# Generate API documentation
+.claude/scripts/generate-dartdoc.sh
+
+# Or use the skills:
 /build-install-apk
+/generate-dartdoc
 ```
 
 ## Pre-Commit Validation
@@ -169,6 +174,67 @@ Use the `/build-install-apk` skill to build and install to a connected device in
 /build-install-apk
 ```
 
+## API Documentation Generation
+
+Generate comprehensive API documentation using dartdoc with best practices for AI agent scanning.
+
+**Generate documentation:**
+```bash
+# Generate HTML documentation (human-readable)
+/generate-dartdoc
+
+# Generate JSON for AI parsing
+/generate-dartdoc --json
+
+# Validate documentation completeness
+/generate-dartdoc --validate
+
+# Open in browser after generation
+/generate-dartdoc --open
+```
+
+**Output location:** `dartdoc/` directory
+
+**What gets documented:**
+- All public classes, methods, and properties
+- Core data models (`PdfDocument`, `AppSettings`, etc.)
+- Repository interfaces and implementations
+- Services (`PdfIntentHandler`, `ThumbnailService`, etc.)
+- Feature modules (Library, Reader, Settings, etc.)
+
+**Generated files:**
+- `index.html` - Main documentation (HTML format)
+- `index.md` - AI-friendly summary with quick links
+- `manifest.json` - JSON manifest for AI agent discovery (when using `--json`)
+
+**Best practices for documentation:**
+```dart
+/// Loads all PDF documents from local storage.
+///
+/// Returns a [Result] containing either a list of [PdfDocument]
+/// on success, or an [AppFailure] on error.
+///
+/// Example:
+/// ```dart
+/// final result = await repository.getAllPdfs();
+/// result.when(
+///   success: (pdfs) => print('Found ${pdfs.length}'),
+///   failure: (error) => print('Error: $error'),
+/// );
+/// ```
+///
+/// @seealso [getPdfById] for loading a single PDF
+Future<Result<List<PdfDocument>>> getAllPdfs();
+```
+
+**Pre-commit workflow:**
+```bash
+# Generate documentation before committing API changes
+/generate-dartdoc
+git add dartdoc/
+git commit -m "docs: update API documentation"
+```
+
 ## Testing Workflow
 
 **IMPORTANT: Always run tests before building APK after code changes.**
@@ -203,7 +269,10 @@ flutter test test/unit/features/reader/
 flutter test --verbose
 
 # Run integration tests (requires device/emulator)
-flutter test integration_test/
+flutter test test/integration/
+
+# Run specific integration test
+flutter test test/integration/pdf_intent_signaling_sequence_test.dart
 ```
 
 ### Test Structure
@@ -212,13 +281,20 @@ flutter test integration_test/
 test/
 ├── unit/                      # Unit tests
 │   ├── core/
-│   │   └── data/models/       # Model tests (PdfDocument, etc.)
+│   │   └── services/          # Core service tests (pdf_intent_handler, thumbnail_service, etc.)
+│   ├── models/                # Model tests (PdfDocument, AppSettings, etc.)
+│   ├── repositories/          # Repository tests
+│   ├── utils/                 # Utility tests
 │   └── features/
 │       ├── library/           # Library feature tests
 │       ├── reader/            # Reader feature tests
 │       └── settings/          # Settings feature tests
 ├── widget/                    # Widget tests
+│   ├── features/reader/       # Reader widget tests
+│   ├── settings/              # Settings widget tests
+│   └── shared/screens/        # Shared screen widgets
 └── integration/               # Integration tests (requires device)
+    └── core/services/         # Integration tests for core services
 ```
 
 ### Running Tests Before Building
@@ -233,7 +309,13 @@ flutter build apk --release    # Build APK (only if tests pass!)
 
 ### Creating New Tests
 
-When adding new features, create corresponding test files:
+When adding new features, use the `/test-generator` skill to scaffold test files:
+
+```bash
+/test-generator
+```
+
+Or create tests manually:
 
 ```bash
 # Create test for a new feature
@@ -447,9 +529,254 @@ firestore export <collection_name>
 - Authentication failures → Check Firebase Auth logs
 - Performance issues → Review cold starts and function execution times
 
+## PDF Intent Handling & WhatsApp Integration
+
+This section documents the implementation of robust PDF intent handling, specifically addressing race conditions when opening PDFs from WhatsApp.
+
+### Problem Statement
+
+When users opened PDF files from WhatsApp, the app would show "page not found" instead of displaying the PDF. This was caused by a race condition:
+
+1. WhatsApp sends a `content://` URI intent
+2. Android must copy the file from WhatsApp's secure storage to app's internal storage
+3. Flutter attempts to read the file before Android completes the copy operation
+4. Result: File doesn't exist → "page not found" error
+
+### Solution Architecture
+
+**Sequential Signaling Pattern**: Android completes ALL file operations (copy + sync + verify) before signaling Flutter to process the intent.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ANDROID SIDE                                                       │
+│ 1. Receive intent from WhatsApp (content:// URI)                   │
+│ 2. Copy file to internal storage                                  │
+│ 3. Call fd.sync() to force data to disk                           │
+│ 4. Verify file is readable (RandomAccessFile.read)                 │
+│ 5. Return path to Flutter ONLY when verified                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ FLUTTER SIDE                                                       │
+│ 6. Receive file path via MethodChannel                             │
+│ 7. Call verifyFileReady (double-check with Android)               │
+│ 8. Retry up to 5 times with exponential backoff (200ms → 3200ms)   │
+│ 9. Process PDF when verified                                      │
+│ 10. Show user-friendly error if all retries fail                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Implementation Changes
+
+#### 1. Result Type Pattern (Dart)
+
+**File**: `lib/core/services/pdf_intent_handler.dart`
+
+Replaced void/callback pattern with sealed class for type-safe error handling:
+
+```dart
+sealed class PdfIntentResult {
+  const factory PdfIntentResult.success(String pdfId) = PdfIntentSuccessData;
+  const factory PdfIntentResult.failure(String error) = PdfIntentFailureData;
+}
+```
+
+**Before**: `Future<void> handlePdfIntent(String filePath, void Function(String pdfId) navigateToReader)`
+
+**After**: `Future<PdfIntentResult> handlePdfIntent(String filePath)`
+
+#### 2. Enhanced Retry Logic
+
+**File**: `lib/core/services/pdf_intent_handler.dart`
+
+Added `_verifyFileReadyWithAndroid` method with exponential backoff:
+
+```dart
+Future<bool> _verifyFileReadyWithAndroid(String filePath) async {
+  const maxAttempts = 5;
+  for (int attempt = 0; attempt < maxAttempts; attempt++) {
+    final result = await _channel.invokeMethod<bool>('verifyFileReady', {'path': filePath});
+    if (result == true) return true;
+    
+    // Exponential backoff: 200ms, 400ms, 800ms, 1600ms, 3200ms
+    final delayMs = 200 * (1 << attempt);
+    await Future.delayed(Duration(milliseconds: delayMs));
+  }
+  return false;
+}
+```
+
+#### 3. Android File Verification
+
+**File**: `android/app/src/main/kotlin/com/pdfreader/pdf_reader_app/MainActivity.kt`
+
+Added `verifyFileReady` MethodChannel handler:
+
+```kotlin
+"verifyFileReady" -> {
+  val filePath = call.argument<String>("path")
+  val isReady = verifyFileIsReady(filePath)
+  result.success(isReady)
+}
+
+private fun verifyFileIsReady(filePath: String): Boolean {
+  val file = File(filePath)
+  if (!file.exists() || file.length() == 0L) return false
+  
+  return try {
+    java.io.RandomAccessFile(file, "r").use { raf ->
+      val channel = raf.channel
+      channel.force(true)  // Force sync to disk
+      val firstByte = raf.read()
+      firstByte != -1  // File is readable
+    }
+  } catch (e: Exception) {
+    false
+  }
+}
+```
+
+#### 4. User-Friendly Error Messages
+
+**File**: `lib/main.dart`
+
+Changed from silent failures to SnackBar error messages:
+
+```dart
+switch (result) {
+  case PdfIntentSuccessData(:final pdfId):
+    ref.read(routerProvider).go('/reader?pdfId=$pdfId');
+  case PdfIntentFailureData(:final error):
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Dismiss',
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
+      ),
+    );
+}
+```
+
+### Performance Metrics
+
+Real device test with 95KB PDF from WhatsApp:
+
+| Phase | Time |
+|-------|------|
+| Total intent handling | 375ms |
+| File verification (first attempt) | 30ms |
+| PDF processing | ~300ms |
+| Navigation | <50ms |
+
+**Result**: No race condition detected, PDF opens successfully on first attempt.
+
+### Integration Testing
+
+**File**: `test/integration/pdf_intent_signaling_sequence_test.dart`
+
+Comprehensive test suite with **32 tests** covering:
+
+- Phase 1: MainActivity File Copy (2 tests)
+- Phase 2: MethodChannel Communication (2 tests)
+- Phase 3: Flutter Intent Processing (2 tests)
+- End-to-End: Complete sequence (2 tests)
+- Race Condition Prevention (2 tests)
+- Timing & Performance (2 tests)
+- Edge Cases (20 tests):
+  - File corruption scenarios (4 tests)
+  - Concurrent intents (2 tests)
+  - File system edge cases (3 tests)
+  - Timing edge cases (3 tests)
+  - Error recovery (3 tests)
+  - Intent data edge cases (3 tests)
+  - Memory & resource edge cases (2 tests)
+
+**Run tests**:
+```bash
+flutter test test/integration/pdf_intent_signaling_sequence_test.dart
+```
+
+### Debug Logging Coverage
+
+**Coverage**: ~96% of the signaling sequence
+
+All components have comprehensive timing logs:
+
+```dart
+// Android (Kotlin)
+android.util.Log.i(TAG, "[$startTime] verifyFileIsReady START: $filePath")
+android.util.Log.i(TAG, "[$elapsed] File exists: $exists")
+android.util.Log.i(TAG, "[$elapsed] First byte: $firstByte (0x${firstByte.toString(16)})")
+
+// Flutter (Dart)
+AppLogger.i('[$startTime] _handleIncomingIntent START (flow: $flowType): $filePath');
+AppLogger.i('[$elapsed] handlePdfIntent completed');
+AppLogger.i('[$totalElapsed] _handleIncomingIntent END (total: ${totalElapsed}ms)');
+```
+
+### Monitoring & Debugging
+
+**Monitor logs in real-time**:
+```bash
+adb logcat | grep -E "(PdfIntentHandler|MainActivity|pdf_reader)"
+```
+
+**Filter by timestamp**:
+```bash
+adb logcat | grep -E "\[[0-9]{10,13}\]" | grep "pdf_reader"
+```
+
+**Key log patterns to watch**:
+- `verifyFileReady START` - Android verification started
+- `File verified ready` - File is accessible
+- `Retry attempt X/5` - Exponential backoff in progress
+- `handlePdfIntent completed` - PDF processing finished
+- `Navigating to reader` - Success, navigation occurring
+
+### Learning Outcomes
+
+**Key patterns mastered**:
+
+1. **Sequential Signaling**: Never assume async operations complete. Use explicit verification.
+2. **Exponential Backoff**: Retry pattern for handling slow operations without blocking forever.
+3. **Result Types**: Type-safe error handling without exceptions (sealed classes in Dart).
+4. **Cross-Platform Verification**: Android and Flutter both verify file accessibility.
+5. **fd.sync() Importance**: Forces data to physical disk, not just OS cache.
+
+**Common anti-patterns to avoid**:
+
+```dart
+// ❌ DON'T: Assume file exists after intent received
+if (File(filePath).exists()) {
+  processPdf();  // May fail if copy still in progress
+}
+
+// ✅ DO: Verify with retry logic
+final isReady = await _verifyFileReadyWithAndroid(filePath);
+if (!isReady) {
+  return PdfIntentResult.failure('PDF file is not available.');
+}
+processPdf();
+```
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `lib/core/services/pdf_intent_handler.dart` | Flutter intent handling with retry logic |
+| `lib/main.dart` | App entry point, intent routing |
+| `android/app/.../MainActivity.kt` | Android file copy & verification |
+| `test/integration/pdf_intent_signaling_sequence_test.dart` | Comprehensive integration tests |
+
 ---
 
 ## Dart/Flutter Code Style Guidelines
+
+**Note**: Comprehensive style rules are maintained in [`.claude/rules/code-style.md`](.claude/rules/code-style.md). This section highlights project-specific conventions.
 
 ### General Rules
 

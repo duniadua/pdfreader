@@ -102,7 +102,9 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
       // Subscribe to subsequent intents (app already running).
       final intentHandler = ref.read(pdfIntentHandlerProvider);
       _intentSubscription = intentHandler.intentStream.listen((filePath) {
-        _handleIncomingIntent(filePath);
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        AppLogger.i('[$timestamp] Received subsequent PDF intent via stream: $filePath');
+        _handleIncomingIntent(filePath, flowType: 'subsequent');
       });
     });
   }
@@ -114,35 +116,73 @@ class _PdfReaderAppState extends ConsumerState<PdfReaderApp> {
   }
 
   Future<void> _checkPendingPdfIntent(WidgetRef ref) async {
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    AppLogger.i('[$startTime] _checkPendingPdfIntent START');
+
     final intentHandler = ref.read(pdfIntentHandlerProvider);
     final filePath = await intentHandler.getPendingFilePath();
 
+    final elapsed = DateTime.now().millisecondsSinceEpoch - startTime;
     if (filePath != null) {
+      AppLogger.i('[$elapsed] _checkPendingPdfIntent: found pending path, setting loading=true');
       // Set loading state to show progress indicator
       ref.read(intentLoadingProvider.notifier).setProcessing(true);
-      _handleIncomingIntent(filePath);
+      await _handleIncomingIntent(filePath, flowType: 'initial');
+    } else {
+      AppLogger.i('[$elapsed] _checkPendingPdfIntent: no pending path (normal launch)');
     }
   }
 
-  Future<void> _handleIncomingIntent(String filePath) async {
-    AppLogger.i('Processing PDF intent: $filePath');
+  Future<void> _handleIncomingIntent(String filePath, {String flowType = 'subsequent'}) async {
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    AppLogger.i('[$startTime] _handleIncomingIntent START (flow: $flowType): $filePath');
 
     if (!mounted) return;
 
     final intentHandler = ref.read(pdfIntentHandlerProvider);
-    await intentHandler.handlePdfIntent(filePath, (pdfId) {
-      if (mounted) {
-        // Clear loading state before navigation
-        ref.read(intentLoadingProvider.notifier).setProcessing(false);
-        final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
-        ref.read(routerProvider).go(readerUrl);
-      }
-    });
 
-    // Clear loading state if navigation didn't happen (error case)
+    // Handle intent and get result
+    final handleStart = DateTime.now().millisecondsSinceEpoch;
+    final result = await intentHandler.handlePdfIntent(filePath);
+    final handleElapsed = DateTime.now().millisecondsSinceEpoch - handleStart;
+    AppLogger.i('[$handleElapsed] handlePdfIntent completed');
+
+    // Clear loading state
     if (mounted) {
+      AppLogger.i('[$DateTime.now().millisecondsSinceEpoch] intentLoadingProvider set to false');
       ref.read(intentLoadingProvider.notifier).setProcessing(false);
     }
+
+    // Handle result
+    if (!mounted) return;
+
+    final outcomeTime = DateTime.now().millisecondsSinceEpoch;
+    switch (result) {
+      case PdfIntentSuccessData(:final pdfId):
+        final readerUrl = '${AppRoutes.reader}?pdfId=$pdfId';
+        AppLogger.i('[$outcomeTime] Navigating to reader: $readerUrl');
+        ref.read(routerProvider).go(readerUrl);
+      case PdfIntentFailureData(:final error):
+        AppLogger.i('[$outcomeTime] Showing error to user: $error');
+        // Show error message to user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Dismiss',
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+        AppLogger.e('PDF intent failed: $error');
+    }
+
+    final totalElapsed = DateTime.now().millisecondsSinceEpoch - startTime;
+    AppLogger.i('[$totalElapsed] _handleIncomingIntent END (total: ${totalElapsed}ms, flow: $flowType)');
   }
 
   @override

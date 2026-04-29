@@ -199,7 +199,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                       .onPageChanged(pageDetails.newPageNumber);
 
                   // Skip local update during slider drag (slider already handled it)
-                  if (!_isDragging && mounted) {
+                  // Guard: Syncfusion may report newPageNumber < 1 before document
+                  // is fully loaded, which would cause a negative slider value.
+                  if (!_isDragging &&
+                      mounted &&
+                      pageDetails.newPageNumber >= 1) {
                     setState(() {
                       _currentPage = pageDetails.newPageNumber;
                       _totalPages = _pdfViewerController.pageCount > 0
@@ -343,12 +347,15 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   /// Build page scrubber slider
   Widget _buildPageScrubber(PdfDocument pdf) {
     // Use actual PDF page count if available, otherwise use document total pages
-    final currentPage = _currentPage;
+    // Clamp currentPage to at least 1 to prevent negative slider values
+    final currentPage = _currentPage.clamp(1, _totalPages > 0 ? _totalPages : 1);
     final totalPages = _totalPages > 0 ? _totalPages : pdf.totalPages;
 
     // Use (_totalPages - 1) so last page maps to slider value 1.0
+    // Clamp result to [0.0, 1.0] to guard against edge cases
+    // (e.g., controller returning -1 before document loads)
     final scrollPosition = totalPages > 1
-        ? (currentPage - 1) / (totalPages - 1)
+        ? ((currentPage - 1) / (totalPages - 1)).clamp(0.0, 1.0)
         : 0.0;
 
     return Padding(

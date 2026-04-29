@@ -7,9 +7,31 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sync_pdf;
 import 'package:pdf_reader_app/core/data/models/pdf_document.dart';
 import 'package:pdf_reader_app/core/data/providers/repository_providers.dart';
+import 'package:pdf_reader_app/core/data/repositories/pdf_repository.dart';
 import 'package:pdf_reader_app/core/utils/logger.dart';
 
 part 'pdf_intent_handler.g.dart';
+
+/// Result type for PDF intent processing
+sealed class PdfIntentResult {
+  const PdfIntentResult();
+
+  /// PDF processed successfully, ready to view
+  const factory PdfIntentResult.success(String pdfId) = PdfIntentSuccessData;
+
+  /// PDF processing failed with error message
+  const factory PdfIntentResult.failure(String error) = PdfIntentFailureData;
+}
+
+class PdfIntentSuccessData extends PdfIntentResult {
+  final String pdfId;
+  const PdfIntentSuccessData(this.pdfId);
+}
+
+class PdfIntentFailureData extends PdfIntentResult {
+  final String error;
+  const PdfIntentFailureData(this.error);
+}
 
 /// Service for handling incoming PDF intents from Android.
 ///
@@ -46,6 +68,43 @@ class PdfIntentHandler {
   /// intents.
   Stream<String> get intentStream => _intentStreamController.stream;
 
+  /// Verify file is ready by asking Android to check.
+  ///
+  /// This is more reliable than Flutter-side checks because Android can
+  /// properly sync the file descriptor and verify disk writes.
+  Future<bool> _verifyFileReadyWithAndroid(String filePath) async {
+    const maxAttempts = 5;
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        final result = await _channel.invokeMethod<bool>('verifyFileReady', {
+          'path': filePath,
+        });
+
+        if (result == true) {
+          AppLogger.i('File verified ready by Android (attempt ${attempt + 1}/$maxAttempts)');
+          return true;
+        }
+
+        // Wait before retry with exponential backoff
+        if (attempt < maxAttempts - 1) {
+          final delayMs = 200 * (1 << attempt);
+          await Future.delayed(Duration(milliseconds: delayMs));
+        }
+      } catch (e, st) {
+        AppLogger.w('Failed to call verifyFileReady: $e', e, st);
+        // Continue retrying on error
+        if (attempt < maxAttempts - 1) {
+          final delayMs = 200 * (1 << attempt);
+          await Future.delayed(Duration(milliseconds: delayMs));
+        }
+      }
+    }
+
+    AppLogger.e('File verification failed after $maxAttempts attempts');
+    return false;
+  }
+
   /// Initialize the intent handler.
   ///
   /// Sets up the MethodChannel handler for subsequent intents and checks for
@@ -55,13 +114,11 @@ class PdfIntentHandler {
       if (call.method == 'onNewPdfIntent') {
         final path = call.arguments as String?;
         if (path != null) {
-          // Complete the init completer if it hasn't been completed yet.
           if (!_initCompleter.isCompleted) {
             _initCompleter.complete(path);
           }
-          // Always emit to stream for subsequent-intent listeners.
           _intentStreamController.add(path);
-          AppLogger.i('Received subsequent PDF intent: $path');
+          AppLogger.i('Received PDF intent: $path');
         }
       }
     });
@@ -75,7 +132,7 @@ class PdfIntentHandler {
         _initCompleter.complete(initialPath);
       }
       if (initialPath != null) {
-        AppLogger.i('Initial PDF intent detected: $initialPath');
+        AppLogger.i('Initial PDF intent: $initialPath');
       }
     } catch (e, st) {
       AppLogger.e('Failed to get initial intent', e, st);
@@ -92,35 +149,55 @@ class PdfIntentHandler {
   /// Awaits the [Completer] for the initial intent instead of polling.
   /// Returns `null` if no intent was received.
   Future<String?> getPendingFilePath() async {
+    final awaitStart = DateTime.now().millisecondsSinceEpoch;
+    AppLogger.i('═════════════════════════════════════════════════════════');
+    AppLogger.i('[$awaitStart] getPendingFilePath() - Waiting for init completer...');
+
     final path = await _initCompleter.future;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - awaitStart;
+
+    AppLogger.i('[$elapsed] getPendingFilePath() returned: $path (waited ${elapsed}ms)');
+
     // Reset completer so future calls don't return stale values.
     _initCompleter = Completer<String?>();
+    AppLogger.i('[${DateTime.now().millisecondsSinceEpoch}] Init completer reset');
+    AppLogger.i('═════════════════════════════════════════════════════════');
+
     return path;
   }
 
-  /// Process a PDF file from an intent and navigate to the reader.
-  Future<void> handlePdfIntent(
+  /// Process a PDF file from an intent and return result.
+  Future<PdfIntentResult> handlePdfIntent(
     String filePath,
-    void Function(String pdfId) navigateToReader,
   ) async {
-    try {
-      AppLogger.i('Processing PDF intent: $filePath');
+    AppLogger.i('Processing PDF intent: $filePath');
 
-      // Validate file exists.
+    try {
+      // Verify file is ready via Android
+      final isReady = await _verifyFileReadyWithAndroid(filePath);
+      if (!isReady) {
+        AppLogger.e('File verification failed: $filePath');
+        return const PdfIntentResult.failure('PDF file is not ready. Please try again.');
+      }
+
+      // Validate file exists
       final file = File(filePath);
       if (!await file.exists()) {
         AppLogger.e('PDF file does not exist: $filePath');
-        return;
+        return const PdfIntentResult.failure('PDF file not found on device.');
+      }
+
+      final fileSize = await file.length();
+      if (fileSize == 0) {
+        AppLogger.e('PDF file is empty: $filePath');
+        return const PdfIntentResult.failure('PDF file is empty or corrupted.');
       }
 
       // Validate PDF magic bytes (%PDF-).
       if (!await _isValidPdf(file)) {
-        AppLogger.e('File is not a valid PDF: $filePath');
-        return;
+        AppLogger.e('Invalid PDF format: $filePath');
+        return const PdfIntentResult.failure('Invalid PDF file format.');
       }
-
-      // Get file size.
-      final fileSize = await file.length();
 
       // Extract filename with proper URL decoding.
       final filename = _decodeFilename(filePath);
@@ -129,14 +206,10 @@ class PdfIntentHandler {
       final repository = _ref.read(sharedPreferencesPdfRepositoryProvider);
       final existingPdf = await _findExistingPdf(repository, filePath);
       if (existingPdf != null) {
-        // Update lastOpenedAt and navigate to existing entry.
         final updated = existingPdf.copyWith(lastOpenedAt: DateTime.now());
         await repository.updatePdf(updated);
-        AppLogger.i(
-          'PDF already exists, navigating to existing: ${existingPdf.id}',
-        );
-        navigateToReader(existingPdf.id);
-        return;
+        AppLogger.i('PDF already exists: ${existingPdf.id}');
+        return PdfIntentResult.success(existingPdf.id);
       }
 
       // Extract page count (skip for large files to avoid OOM).
@@ -150,16 +223,10 @@ class PdfIntentHandler {
         } catch (e, st) {
           AppLogger.w('Could not read PDF page count', e, st);
         }
-      } else {
-        AppLogger.i(
-          'Skipping page count for large file '
-          '(${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB)',
-        );
       }
 
       // Create PDF document entry.
       final pdfId = DateTime.now().millisecondsSinceEpoch.toString();
-
       final pdf = PdfDocument(
         id: pdfId,
         title: filename,
@@ -173,11 +240,9 @@ class PdfIntentHandler {
       // Save to database.
       final result = await repository.addPdf(pdf);
 
-      result.when(
-        success: (savedPdf) async {
-          AppLogger.i(
-            'PDF saved to database: ${savedPdf.title} (${savedPdf.id})',
-          );
+      return result.when(
+        success: (savedPdf) {
+          AppLogger.i('PDF saved: ${savedPdf.title} (${savedPdf.id})');
 
           // Generate thumbnail in background.
           repository.generateThumbnail(savedPdf.id).then((thumbnailResult) {
@@ -193,15 +258,16 @@ class PdfIntentHandler {
             );
           });
 
-          navigateToReader(savedPdf.id);
+          return PdfIntentResult.success(savedPdf.id);
         },
         failure: (error, stackTrace) {
-          AppLogger.e('Failed to save PDF to database', error, stackTrace);
-          // Do NOT navigate with unsaved pdfId — it won't be found by the reader.
+          AppLogger.e('Failed to save PDF', error, stackTrace);
+          return const PdfIntentResult.failure('Could not save the PDF. Please try again.');
         },
       );
     } catch (e, st) {
       AppLogger.e('Failed to handle PDF intent', e, st);
+      return const PdfIntentResult.failure('Could not open the PDF. Please try again.');
     }
   }
 
@@ -243,7 +309,7 @@ class PdfIntentHandler {
 
   /// Find an existing PDF in the repository by its file path.
   Future<PdfDocument?> _findExistingPdf(
-    dynamic repository,
+    PdfRepository repository,
     String filePath,
   ) async {
     try {

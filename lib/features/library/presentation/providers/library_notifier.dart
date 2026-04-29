@@ -376,7 +376,9 @@ class LibraryNotifier extends _$LibraryNotifier {
             result.when(
               success: (thumbnailPath) {
                 if (thumbnailPath != null) {
-                  AppLogger.i('Thumbnail generated: $thumbnailPath');
+                  AppLogger.i('Thumbnail generated: $thumbnailPath for ${addedPdf.title}');
+                  // Invalidate cache for this PDF to force refresh from storage
+                  _cache.invalidatePdf(addedPdf.id);
                   // Refresh library to show thumbnail
                   loadLibrary();
                 } else {
@@ -463,15 +465,23 @@ class LibraryNotifier extends _$LibraryNotifier {
             result.when(
               success: (thumbnailPath) {
                 if (thumbnailPath != null) {
-                  AppLogger.i('Thumbnail generated: $thumbnailPath');
+                  AppLogger.i('Thumbnail generated: $thumbnailPath for ${addedPdf.title}');
+                  // Invalidate cache for this PDF to force refresh from storage
+                  _cache.invalidatePdf(addedPdf.id);
+                  // Refresh library to show thumbnail
+                  loadLibrary();
+                } else {
+                  AppLogger.w('Thumbnail generation returned null for ${addedPdf.title}');
                 }
               },
               failure: (error, stackTrace) {
                 AppLogger.e('Failed to generate thumbnail', error, stackTrace);
+                // Still load library even if thumbnail failed
+                loadLibrary();
               },
             );
           });
-          // Load library to show the new file
+          // Load library immediately to show the new file (without waiting for thumbnail)
           loadLibrary();
         },
       );

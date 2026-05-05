@@ -2,9 +2,20 @@ import 'dart:typed_data';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../models/drive_file.dart';
-import '../drive_file_cache.dart';
 
 part 'drive_repository.freezed.dart';
+
+/// Cache strategy for Drive file operations
+enum DriveCacheStrategy {
+  /// Check cache first, then fetch from network if not found
+  cacheFirst,
+
+  /// Force refresh from network, ignoring cache
+  forceRefresh,
+
+  /// Fetch from network only, don't use cache
+  networkOnly,
+}
 
 /// Result type for repository operations
 @freezed

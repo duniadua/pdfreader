@@ -58,18 +58,60 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
 
   @override
   void dispose() {
+    // Reset screen brightness if it was changed
+    try {
+      ScreenBrightness.instance.resetApplicationScreenBrightness().catchError((_) {
+        // Ignore errors during dispose
+      });
+    } catch (_) {
+      // Ignore errors during dispose
+    }
+
+    // Dispose PDF viewer controller
     _pdfViewerController.dispose();
+
     super.dispose();
+  }
+
+  /// Cleanup when exiting the reader screen
+  void _cleanupOnExit() {
+    // Reset rotation state
+    _rotationCount = 0;
+
+    // Reset page tracking
+    _currentPage = 1;
+    _totalPages = 1;
+    _isInitialized = false;
+
+    // Save reading progress before exiting
+    final state = ref.read(pdfReaderNotifierProvider(widget.pdfId));
+    state.maybeWhen(
+      loaded: (pdf) {
+        if (pdf.progress?.currentPage != null && pdf.progress!.currentPage > 0) {
+          // Progress is already saved in onPageChanged, just log for analytics
+          AppLogger.d('Exiting PDF: ${pdf.title} at page ${pdf.progress!.currentPage}');
+        }
+      },
+      orElse: () {},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(pdfReaderNotifierProvider(widget.pdfId));
 
-    return Scaffold(
-      appBar: _buildAppBar(state),
-      body: _buildBody(state),
-      bottomNavigationBar: _buildToolbar(state),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          // Reset state when popping
+          _cleanupOnExit();
+        }
+      },
+      child: Scaffold(
+        appBar: _buildAppBar(state),
+        body: _buildBody(state),
+        bottomNavigationBar: _buildToolbar(state),
+      ),
     );
   }
 

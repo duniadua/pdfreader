@@ -47,9 +47,36 @@ class CacheManager {
   }
 
   void _setupMemoryListener() {
-    // Listen to memory pressure events
+    // Listen to memory pressure events on mobile platforms
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // TODO: Add memory pressure listener for mobile platforms
+      _startMemoryPressureMonitoring();
+    }
+  }
+
+  /// Start monitoring memory pressure on mobile platforms
+  void _startMemoryPressureMonitoring() {
+    // Check memory pressure every 30 seconds
+    Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _checkMemoryPressure(),
+    );
+  }
+
+  /// Check memory pressure and clear cache if needed
+  void _checkMemoryPressure() {
+    try {
+      // For Flutter, we don't have direct access to system memory
+      // Instead, we'll clear cache when we have too many items
+      final stats = getMetadataCacheStats();
+      final itemCount = stats.size;
+
+      // Clear cache if we have more than 100 PDFs cached
+      if (itemCount > 100) {
+        AppLogger.i('Memory pressure: Clearing metadata cache ($itemCount items)');
+        clearMetadataCache();
+      }
+    } catch (e, st) {
+      AppLogger.e('Failed to check memory pressure', e, st);
     }
   }
 

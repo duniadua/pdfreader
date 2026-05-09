@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ChatSessionEntity class from the chat_session_entity library, for the Dart programming language.">
+  <title>ChatSessionEntity class - chat_session_entity library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">pdf_reader_app</a></li>
+    <li><a href="../core_data_datasources_local_chat_session_entity/">core&#47;data&#47;datasources&#47;local&#47;chat_session_entity.dart</a></li>
+    <li class="self-crumb">ChatSessionEntity class</li>
+  </ol>
+  <div class="self-name">ChatSessionEntity</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="core_data_datasources_local_chat_session_entity&#47;core_data_datasources_local_chat_session_entity-library-sidebar.html"
+    data-below-sidebar="core_data_datasources_local_chat_session_entity&#47;ChatSessionEntity-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">ChatSessionEntity</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Database entity for chat sessions.
+Represents a chat session associated with a PDF document.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="ChatSessionEntity.new" class="callable">
+          <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/ChatSessionEntity.html">ChatSessionEntity</a></span><span class="signature">({<span class="parameter" id="-param-id"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span>, </span><span class="parameter" id="-param-pdfId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">pdfId</span>, </span><span class="parameter" id="-param-pdfTitle"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">pdfTitle</span>, </span><span class="parameter" id="-param-pdfFilePath"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">pdfFilePath</span>, </span><span class="parameter" id="-param-createdAt"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">createdAt</span>, </span><span class="parameter" id="-param-updatedAt"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">updatedAt</span>, </span><span class="parameter" id="-param-messageCount"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">messageCount</span>, </span><span class="parameter" id="-param-lastMessageAt"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">lastMessageAt</span>, </span><span class="parameter" id="-param-isArchived"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">isArchived</span></span>})</span>
+        </dt>
+        <dd>
+          
+            <div class="constructor-modifier features">const</div>
+        </dd>
+        <dt id="ChatSessionEntity.fromJson" class="callable">
+          <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/ChatSessionEntity.fromJson.html">ChatSessionEntity.fromJson</a></span><span class="signature">(<span class="parameter" id="fromJson-param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span>)</span>
+        </dt>
+        <dd>
+          Convert from database map (SQLite row)
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="createdAt" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/createdAt.html">createdAt</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  When the session was created (milliseconds since epoch)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="createdAtDateTime" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/createdAtDateTime.html">createdAtDateTime</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span>
+  
+
+</dt>
+<dd>
+  Convert createdAt timestamp to DateTime
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="id" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/id.html">id</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Unique identifier for the session (UUID)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="isArchived" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/isArchived.html">isArchived</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether the session is archived (soft delete)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lastMessageAt" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/lastMessageAt.html">lastMessageAt</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Timestamp of the most recent message (milliseconds since epoch)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lastMessageAtDateTime" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/lastMessageAtDateTime.html">lastMessageAtDateTime</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>
+  
+
+</dt>
+<dd>
+  Convert lastMessageAt timestamp to DateTime, or null if not set
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="messageCount" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/messageCount.html">messageCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Total number of messages in the session
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pdfFilePath" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/pdfFilePath.html">pdfFilePath</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  PDF file path (denormalized for performance)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pdfId" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/pdfId.html">pdfId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  PDF document ID this session is associated with
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="pdfTitle" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/pdfTitle.html">pdfTitle</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  PDF title (denormalized for performance)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updatedAt" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/updatedAt.html">updatedAt</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  When the session was last updated (milliseconds since epoch)
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="updatedAtDateTime" class="property">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/updatedAtDateTime.html">updatedAtDateTime</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a></span>
+  
+
+</dt>
+<dd>
+  Convert updatedAt timestamp to DateTime
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="copyWith" class="callable">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">id</span>, </span><span class="parameter" id="copyWith-param-pdfId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pdfId</span>, </span><span class="parameter" id="copyWith-param-pdfTitle"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pdfTitle</span>, </span><span class="parameter" id="copyWith-param-pdfFilePath"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pdfFilePath</span>, </span><span class="parameter" id="copyWith-param-createdAt"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">createdAt</span>, </span><span class="parameter" id="copyWith-param-updatedAt"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">updatedAt</span>, </span><span class="parameter" id="copyWith-param-messageCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">messageCount</span>, </span><span class="parameter" id="copyWith-param-lastMessageAt"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">lastMessageAt</span>, </span><span class="parameter" id="copyWith-param-isArchived"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">isArchived</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity-class.html">ChatSessionEntity</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Create a copy with updated fields
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../core_data_datasources_local_chat_session_entity/ChatSessionEntity/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Convert to database map (SQLite row)
+  
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">pdf_reader_app</a></li>
+    <li><a href="../core_data_datasources_local_chat_session_entity/">chat_session_entity</a></li>
+    <li class="self-crumb">ChatSessionEntity class</li>
+</ol>
+
+    <h5>chat_session_entity library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    pdf_reader_app
+      1.0.0+1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

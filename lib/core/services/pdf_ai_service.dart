@@ -333,6 +333,38 @@ class PdfAIService with AiServiceLogging {
     }
   }
 
+  /// Extract retry-after seconds from error message
+  ///
+  /// Looks for patterns like:
+  /// - "retry after 60 seconds"
+  /// - "try again in 45s"
+  /// - "wait 30 seconds"
+  int? _extractRetryAfter(String? message) {
+    if (message == null) return null;
+
+    // Pattern to match numbers in the error message that could be retry seconds
+    // Matches: "retry after 60", "wait 45 seconds", "try again in 30s", etc.
+    final retryPattern = RegExp(
+      r'(?:retry|wait|try again|available in|after)\s*(?:after|in)?\s*(\d+)\s*(?:seconds?|secs?|s)?',
+      caseSensitive: false,
+    );
+
+    final match = retryPattern.firstMatch(message);
+    if (match != null && match.groupCount >= 1) {
+      final secondsStr = match.group(1);
+      if (secondsStr != null) {
+        final seconds = int.tryParse(secondsStr);
+        if (seconds != null && seconds > 0 && seconds <= 3600) {
+          // Only accept reasonable values (1 second to 1 hour)
+          AppLogger.i('⏱️  Extracted retry-after: $seconds seconds');
+          return seconds;
+        }
+      }
+    }
+
+    return null;
+  }
+
   /// Parse Firebase Functions error and extract user-friendly message
   PdfAiException _parseFirebaseError(Object error) {
     if (error is FirebaseFunctionsException) {
@@ -352,8 +384,12 @@ class PdfAIService with AiServiceLogging {
       // Add context based on error code
       switch (code) {
         case FirebaseErrorCodes.resourceExhausted:
-          // Rate limit error - message already contains detailed info
-          return PdfAiException(userMessage);
+          // Rate limit error - extract retry-after and add countdown info
+          final retryAfter = _extractRetryAfter(message);
+          return PdfAiException(
+            userMessage,
+            retryAfter: retryAfter,
+          );
 
         case FirebaseErrorCodes.invalidArgument:
           // Validation error - message already contains details
@@ -531,10 +567,17 @@ class PdfAIService with AiServiceLogging {
 
 /// Exception thrown when PDF AI operations fail.
 class PdfAiException implements Exception {
+  /// User-friendly error message
   final String message;
 
-  const PdfAiException(this.message);
+  /// Number of seconds until retry is allowed (for rate limits)
+  final int? retryAfter;
+
+  /// Whether this is a rate limit error
+  bool get isRateLimit => retryAfter != null;
+
+  const PdfAiException(this.message, {this.retryAfter});
 
   @override
-  String toString() => 'PdfAiException: $message';
+  String toString() => 'PdfAiException: $message${retryAfter != null ? ' (retry after ${retryAfter}s)' : ''}';
 }

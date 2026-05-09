@@ -3,6 +3,10 @@ import { googleAI, gemini } from '@genkit-ai/googleai';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
+import { checkRateLimit } from './rateLimit/simpleRateLimit';
+
+// Export scheduled functions
+export * from './scheduled';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -52,6 +56,18 @@ export const summarizeFlow = onCall(
     }
 
     console.log('✅ Authenticated:', request.auth.uid);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(request.auth.uid, 'summarizeFlow');
+    if (!rateLimitResult.allowed) {
+      console.warn(`⏱️ Rate limit exceeded for user ${request.auth.uid}`);
+      throw new HttpsError(
+        'resource-exhausted',
+        `${ERROR_MESSAGES.RATE_LIMIT} Please try again after ${rateLimitResult.retryAfter || 60} seconds.`
+      );
+    }
+
+    console.log('✅ Rate limit check passed');
 
     const { pdfText } = request.data;
 
@@ -149,6 +165,18 @@ export const chatFlow = onCall(
     }
 
     console.log('✅ Authenticated:', request.auth.uid);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(request.auth.uid, 'chatFlow');
+    if (!rateLimitResult.allowed) {
+      console.warn(`⏱️ Rate limit exceeded for user ${request.auth.uid}`);
+      throw new HttpsError(
+        'resource-exhausted',
+        `${ERROR_MESSAGES.RATE_LIMIT} Please try again after ${rateLimitResult.retryAfter || 60} seconds.`
+      );
+    }
+
+    console.log('✅ Rate limit check passed');
 
     const { pdfText, question, history = [] } = request.data;
 
@@ -307,6 +335,18 @@ export const extractFlow = onCall(
     }
 
     console.log('✅ Authenticated:', request.auth.uid);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(request.auth.uid, 'extractFlow');
+    if (!rateLimitResult.allowed) {
+      console.warn(`⏱️ Rate limit exceeded for user ${request.auth.uid}`);
+      throw new HttpsError(
+        'resource-exhausted',
+        `${ERROR_MESSAGES.RATE_LIMIT} Please try again after ${rateLimitResult.retryAfter || 60} seconds.`
+      );
+    }
+
+    console.log('✅ Rate limit check passed');
 
     const { pdfText, prompt } = request.data;
 

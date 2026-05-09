@@ -253,6 +253,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           const SizedBox(height: 24),
+
+          // Section: Debugging
+          _buildSectionHeader('Debugging', isDark),
+          _buildSettingsGroup(
+            isDark: isDark,
+            children: [_buildFirebaseTestButton(isDark: isDark)],
+          ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -423,6 +432,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(driveNotifierProvider.notifier).disconnect();
   }
 
+  Widget _buildFirebaseTestButton({required bool isDark}) {
+    return InkWell(
+      onTap: () => context.go(AppRoutes.firebaseTest),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.science,
+                color: isDark ? Colors.orange : Colors.orange.shade700,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Firebase Functions Test',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  Text(
+                    'Test AI functions (chat, summarize, extract)',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
@@ -510,7 +579,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppTheme.primary,
+              activeTrackColor: AppTheme.primary,
             ),
           ],
         ),

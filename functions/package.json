@@ -8,10 +8,15 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
+    "deploy:safe": "npm run build && npm test && firebase deploy --only functions",
+    "deploy:prod": "npm run build && npm test && firebase deploy --only functions --force",
     "logs": "firebase functions:log",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "lint": "tsc --noEmit",
+    "format:check": "prettier --check '**/*.{ts,js,json}' || true",
+    "format:write": "prettier --write '**/*.{ts,js,json}' || true"
   },
   "engines": {
     "node": "20"

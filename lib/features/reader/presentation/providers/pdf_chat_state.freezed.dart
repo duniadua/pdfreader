@@ -345,6 +345,7 @@ mixin _$PdfChatState {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )
     visible,
     required TResult Function() hidden,
@@ -360,6 +361,7 @@ mixin _$PdfChatState {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult? Function()? hidden,
@@ -375,6 +377,7 @@ mixin _$PdfChatState {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult Function()? hidden,
@@ -476,6 +479,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )
     visible,
     required TResult Function() hidden,
@@ -495,6 +499,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult? Function()? hidden,
@@ -514,6 +519,7 @@ class _$PdfChatStateInitialImpl implements _PdfChatStateInitial {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult Function()? hidden,
@@ -579,7 +585,10 @@ abstract class _$$PdfChatStateVisibleImplCopyWith<$Res> {
     String? error,
     String? extractedText,
     String? currentPdfPath,
+    RateLimitInfo? rateLimitInfo,
   });
+
+  $RateLimitInfoCopyWith<$Res>? get rateLimitInfo;
 }
 
 /// @nodoc
@@ -603,6 +612,7 @@ class __$$PdfChatStateVisibleImplCopyWithImpl<$Res>
     Object? error = freezed,
     Object? extractedText = freezed,
     Object? currentPdfPath = freezed,
+    Object? rateLimitInfo = freezed,
   }) {
     return _then(
       _$PdfChatStateVisibleImpl(
@@ -634,8 +644,26 @@ class __$$PdfChatStateVisibleImplCopyWithImpl<$Res>
             ? _value.currentPdfPath
             : currentPdfPath // ignore: cast_nullable_to_non_nullable
                   as String?,
+        rateLimitInfo: freezed == rateLimitInfo
+            ? _value.rateLimitInfo
+            : rateLimitInfo // ignore: cast_nullable_to_non_nullable
+                  as RateLimitInfo?,
       ),
     );
+  }
+
+  /// Create a copy of PdfChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RateLimitInfoCopyWith<$Res>? get rateLimitInfo {
+    if (_value.rateLimitInfo == null) {
+      return null;
+    }
+
+    return $RateLimitInfoCopyWith<$Res>(_value.rateLimitInfo!, (value) {
+      return _then(_value.copyWith(rateLimitInfo: value));
+    });
   }
 }
 
@@ -650,6 +678,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
     this.error,
     this.extractedText,
     this.currentPdfPath,
+    this.rateLimitInfo,
   }) : _messages = messages;
 
   /// All messages in the conversation
@@ -690,9 +719,13 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
   @override
   final String? currentPdfPath;
 
+  /// Rate limit information (when user is rate limited)
+  @override
+  final RateLimitInfo? rateLimitInfo;
+
   @override
   String toString() {
-    return 'PdfChatState.visible(messages: $messages, isLoading: $isLoading, isExtractingText: $isExtractingText, extractProgress: $extractProgress, error: $error, extractedText: $extractedText, currentPdfPath: $currentPdfPath)';
+    return 'PdfChatState.visible(messages: $messages, isLoading: $isLoading, isExtractingText: $isExtractingText, extractProgress: $extractProgress, error: $error, extractedText: $extractedText, currentPdfPath: $currentPdfPath, rateLimitInfo: $rateLimitInfo)';
   }
 
   @override
@@ -711,7 +744,9 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
             (identical(other.extractedText, extractedText) ||
                 other.extractedText == extractedText) &&
             (identical(other.currentPdfPath, currentPdfPath) ||
-                other.currentPdfPath == currentPdfPath));
+                other.currentPdfPath == currentPdfPath) &&
+            (identical(other.rateLimitInfo, rateLimitInfo) ||
+                other.rateLimitInfo == rateLimitInfo));
   }
 
   @override
@@ -724,6 +759,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
     error,
     extractedText,
     currentPdfPath,
+    rateLimitInfo,
   );
 
   /// Create a copy of PdfChatState
@@ -749,6 +785,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )
     visible,
     required TResult Function() hidden,
@@ -761,6 +798,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       error,
       extractedText,
       currentPdfPath,
+      rateLimitInfo,
     );
   }
 
@@ -776,6 +814,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult? Function()? hidden,
@@ -788,6 +827,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       error,
       extractedText,
       currentPdfPath,
+      rateLimitInfo,
     );
   }
 
@@ -803,6 +843,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult Function()? hidden,
@@ -817,6 +858,7 @@ class _$PdfChatStateVisibleImpl implements _PdfChatStateVisible {
         error,
         extractedText,
         currentPdfPath,
+        rateLimitInfo,
       );
     }
     return orElse();
@@ -866,6 +908,7 @@ abstract class _PdfChatStateVisible implements PdfChatState {
     final String? error,
     final String? extractedText,
     final String? currentPdfPath,
+    final RateLimitInfo? rateLimitInfo,
   }) = _$PdfChatStateVisibleImpl;
 
   /// All messages in the conversation
@@ -888,6 +931,9 @@ abstract class _PdfChatStateVisible implements PdfChatState {
 
   /// The current PDF file path (persists across provider rebuilds)
   String? get currentPdfPath;
+
+  /// Rate limit information (when user is rate limited)
+  RateLimitInfo? get rateLimitInfo;
 
   /// Create a copy of PdfChatState
   /// with the given fields replaced by the non-null parameter values.
@@ -948,6 +994,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )
     visible,
     required TResult Function() hidden,
@@ -967,6 +1014,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult? Function()? hidden,
@@ -986,6 +1034,7 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
       String? error,
       String? extractedText,
       String? currentPdfPath,
+      RateLimitInfo? rateLimitInfo,
     )?
     visible,
     TResult Function()? hidden,
@@ -1034,4 +1083,198 @@ class _$PdfChatStateHiddenImpl implements _PdfChatStateHidden {
 
 abstract class _PdfChatStateHidden implements PdfChatState {
   const factory _PdfChatStateHidden() = _$PdfChatStateHiddenImpl;
+}
+
+/// @nodoc
+mixin _$RateLimitInfo {
+  /// When the rate limit will expire (UTC timestamp)
+  DateTime get expiresAt => throw _privateConstructorUsedError;
+
+  /// Number of seconds until retry is allowed
+  int get retryAfterSeconds => throw _privateConstructorUsedError;
+
+  /// User-friendly error message
+  String get message => throw _privateConstructorUsedError;
+
+  /// Create a copy of RateLimitInfo
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $RateLimitInfoCopyWith<RateLimitInfo> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $RateLimitInfoCopyWith<$Res> {
+  factory $RateLimitInfoCopyWith(
+    RateLimitInfo value,
+    $Res Function(RateLimitInfo) then,
+  ) = _$RateLimitInfoCopyWithImpl<$Res, RateLimitInfo>;
+  @useResult
+  $Res call({DateTime expiresAt, int retryAfterSeconds, String message});
+}
+
+/// @nodoc
+class _$RateLimitInfoCopyWithImpl<$Res, $Val extends RateLimitInfo>
+    implements $RateLimitInfoCopyWith<$Res> {
+  _$RateLimitInfoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of RateLimitInfo
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? expiresAt = null,
+    Object? retryAfterSeconds = null,
+    Object? message = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            expiresAt: null == expiresAt
+                ? _value.expiresAt
+                : expiresAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            retryAfterSeconds: null == retryAfterSeconds
+                ? _value.retryAfterSeconds
+                : retryAfterSeconds // ignore: cast_nullable_to_non_nullable
+                      as int,
+            message: null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$RateLimitInfoImplCopyWith<$Res>
+    implements $RateLimitInfoCopyWith<$Res> {
+  factory _$$RateLimitInfoImplCopyWith(
+    _$RateLimitInfoImpl value,
+    $Res Function(_$RateLimitInfoImpl) then,
+  ) = __$$RateLimitInfoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({DateTime expiresAt, int retryAfterSeconds, String message});
+}
+
+/// @nodoc
+class __$$RateLimitInfoImplCopyWithImpl<$Res>
+    extends _$RateLimitInfoCopyWithImpl<$Res, _$RateLimitInfoImpl>
+    implements _$$RateLimitInfoImplCopyWith<$Res> {
+  __$$RateLimitInfoImplCopyWithImpl(
+    _$RateLimitInfoImpl _value,
+    $Res Function(_$RateLimitInfoImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of RateLimitInfo
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? expiresAt = null,
+    Object? retryAfterSeconds = null,
+    Object? message = null,
+  }) {
+    return _then(
+      _$RateLimitInfoImpl(
+        expiresAt: null == expiresAt
+            ? _value.expiresAt
+            : expiresAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        retryAfterSeconds: null == retryAfterSeconds
+            ? _value.retryAfterSeconds
+            : retryAfterSeconds // ignore: cast_nullable_to_non_nullable
+                  as int,
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$RateLimitInfoImpl implements _RateLimitInfo {
+  const _$RateLimitInfoImpl({
+    required this.expiresAt,
+    required this.retryAfterSeconds,
+    required this.message,
+  });
+
+  /// When the rate limit will expire (UTC timestamp)
+  @override
+  final DateTime expiresAt;
+
+  /// Number of seconds until retry is allowed
+  @override
+  final int retryAfterSeconds;
+
+  /// User-friendly error message
+  @override
+  final String message;
+
+  @override
+  String toString() {
+    return 'RateLimitInfo(expiresAt: $expiresAt, retryAfterSeconds: $retryAfterSeconds, message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$RateLimitInfoImpl &&
+            (identical(other.expiresAt, expiresAt) ||
+                other.expiresAt == expiresAt) &&
+            (identical(other.retryAfterSeconds, retryAfterSeconds) ||
+                other.retryAfterSeconds == retryAfterSeconds) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, expiresAt, retryAfterSeconds, message);
+
+  /// Create a copy of RateLimitInfo
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$RateLimitInfoImplCopyWith<_$RateLimitInfoImpl> get copyWith =>
+      __$$RateLimitInfoImplCopyWithImpl<_$RateLimitInfoImpl>(this, _$identity);
+}
+
+abstract class _RateLimitInfo implements RateLimitInfo {
+  const factory _RateLimitInfo({
+    required final DateTime expiresAt,
+    required final int retryAfterSeconds,
+    required final String message,
+  }) = _$RateLimitInfoImpl;
+
+  /// When the rate limit will expire (UTC timestamp)
+  @override
+  DateTime get expiresAt;
+
+  /// Number of seconds until retry is allowed
+  @override
+  int get retryAfterSeconds;
+
+  /// User-friendly error message
+  @override
+  String get message;
+
+  /// Create a copy of RateLimitInfo
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RateLimitInfoImplCopyWith<_$RateLimitInfoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }

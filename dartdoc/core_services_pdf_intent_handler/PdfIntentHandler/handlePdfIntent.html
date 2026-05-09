@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the handlePdfIntent method from the PdfIntentHandler class, for the Dart programming language.">
+  <title>handlePdfIntent method - PdfIntentHandler class - pdf_intent_handler library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../core_services_pdf_intent_handler/">core&#47;services&#47;pdf_intent_handler.dart</a></li>
+    <li><a href="../../core_services_pdf_intent_handler/PdfIntentHandler-class.html">PdfIntentHandler</a></li>
+    <li class="self-crumb">handlePdfIntent method</li>
+  </ol>
+  <div class="self-name">handlePdfIntent</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="core_services_pdf_intent_handler&#47;PdfIntentHandler-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">handlePdfIntent</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/flutter_test/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../core_services_pdf_intent_handler/PdfIntentResult-class.html">PdfIntentResult</a></span>&gt;</span></span>
+<span class="name ">handlePdfIntent</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="handlePdfIntent-param-filePath"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">filePath</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Process a PDF file from an intent and return result.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;PdfIntentResult&gt; handlePdfIntent(
+  String filePath,
+) async {
+  AppLogger.i(&#39;Processing PDF intent: $filePath&#39;);
+
+  try {
+    &#47;&#47; Verify file is ready via Android
+    final isReady = await _verifyFileReadyWithAndroid(filePath);
+    if (!isReady) {
+      AppLogger.e(&#39;File verification failed: $filePath&#39;);
+      return const PdfIntentResult.failure(&#39;PDF file is not ready. Please try again.&#39;);
+    }
+
+    &#47;&#47; Validate file exists
+    final file = File(filePath);
+    if (!await file.exists()) {
+      AppLogger.e(&#39;PDF file does not exist: $filePath&#39;);
+      return const PdfIntentResult.failure(&#39;PDF file not found on device.&#39;);
+    }
+
+    final fileSize = await file.length();
+    if (fileSize == 0) {
+      AppLogger.e(&#39;PDF file is empty: $filePath&#39;);
+      return const PdfIntentResult.failure(&#39;PDF file is empty or corrupted.&#39;);
+    }
+
+    &#47;&#47; Validate PDF magic bytes (%PDF-).
+    if (!await _isValidPdf(file)) {
+      AppLogger.e(&#39;Invalid PDF format: $filePath&#39;);
+      return const PdfIntentResult.failure(&#39;Invalid PDF file format.&#39;);
+    }
+
+    &#47;&#47; Extract filename with proper URL decoding.
+    final filename = _decodeFilename(filePath);
+
+    &#47;&#47; Check for duplicate before processing.
+    final repository = _ref.read(sharedPreferencesPdfRepositoryProvider);
+    final existingPdf = await _findExistingPdf(repository, filePath);
+    if (existingPdf != null) {
+      final updated = existingPdf.copyWith(lastOpenedAt: DateTime.now());
+      await repository.updatePdf(updated);
+      AppLogger.i(&#39;PDF already exists: ${existingPdf.id}&#39;);
+      return PdfIntentResult.success(existingPdf.id);
+    }
+
+    &#47;&#47; Extract page count (skip for large files to avoid OOM).
+    int totalPages = 0;
+    if (fileSize &lt;= largeFileThreshold) {
+      try {
+        final bytes = await file.readAsBytes();
+        final pdfDocument = sync_pdf.PdfDocument(inputBytes: bytes);
+        totalPages = pdfDocument.pages.count;
+        pdfDocument.dispose();
+      } catch (e, st) {
+        AppLogger.w(&#39;Could not read PDF page count&#39;, e, st);
+      }
+    }
+
+    &#47;&#47; Create PDF document entry.
+    final pdfId = DateTime.now().millisecondsSinceEpoch.toString();
+    final pdf = PdfDocument(
+      id: pdfId,
+      title: filename,
+      filePath: filePath,
+      fileSize: fileSize,
+      createdAt: DateTime.now(),
+      lastOpenedAt: DateTime.now(),
+      totalPages: totalPages,
+    );
+
+    &#47;&#47; Save to database.
+    final result = await repository.addPdf(pdf);
+
+    return result.when(
+      success: (savedPdf) {
+        AppLogger.i(&#39;PDF saved: ${savedPdf.title} (${savedPdf.id})&#39;);
+
+        &#47;&#47; Generate thumbnail in background.
+        repository.generateThumbnail(savedPdf.id).then((thumbnailResult) {
+          thumbnailResult.when(
+            success: (thumbnailPath) {
+              if (thumbnailPath != null) {
+                AppLogger.d(&#39;Thumbnail generated: $thumbnailPath&#39;);
+              }
+            },
+            failure: (error, stackTrace) {
+              AppLogger.w(&#39;Failed to generate thumbnail&#39;, error, stackTrace);
+            },
+          );
+        });
+
+        return PdfIntentResult.success(savedPdf.id);
+      },
+      failure: (error, stackTrace) {
+        AppLogger.e(&#39;Failed to save PDF&#39;, error, stackTrace);
+        return const PdfIntentResult.failure(&#39;Could not save the PDF. Please try again.&#39;);
+      },
+    );
+  } catch (e, st) {
+    AppLogger.e(&#39;Failed to handle PDF intent&#39;, e, st);
+    return const PdfIntentResult.failure(&#39;Could not open the PDF. Please try again.&#39;);
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../core_services_pdf_intent_handler/">pdf_intent_handler</a></li>
+    <li><a href="../../core_services_pdf_intent_handler/PdfIntentHandler-class.html">PdfIntentHandler</a></li>
+    <li class="self-crumb">handlePdfIntent method</li>
+</ol>
+
+    <h5>PdfIntentHandler class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    pdf_reader_app
+      1.0.0+1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

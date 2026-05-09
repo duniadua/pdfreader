@@ -198,7 +198,7 @@ class _PdfChatPanelState extends ConsumerState<PdfChatPanel> {
     PdfChatState chatState,
   ) {
     final progress = chatState.maybeWhen(
-      visible: (_, __, ___, extractProgress, _____, ______, _______) =>
+      visible: (_, _1, _2, extractProgress, _3, _4, _5, _6) =>
           extractProgress ?? 0.0,
       orElse: () => 0.0,
     );

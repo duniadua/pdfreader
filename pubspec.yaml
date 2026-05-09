@@ -75,6 +75,7 @@ dev_dependencies:
   riverpod_generator: ^2.6.1
   freezed: ^2.5.7
   json_serializable: ^6.8.0
+  flutter_launcher_icons: ^0.14.1
 
   # Testing
   mockito: ^5.4.4
@@ -91,6 +92,26 @@ flutter:
 
   # Fonts - commented out for testing, uncomment when font files are available
   # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Inter-Bold.ttf
+  #         weight: 700
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  # Remove alpha channel for iOS (App Store requirement)
+  remove_alpha_ios: true
+  # Android adaptive icon configuration
+  adaptive_icon_background: "#135BEC"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"
   #   - family: Inter
   #     fonts:
   #       - asset: assets/fonts/Inter-Regular.ttf

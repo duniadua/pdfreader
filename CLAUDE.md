@@ -8,6 +8,16 @@ A PDF reader mobile application built with Flutter. Core functionality is local-
 - **Local**: PDF library, viewing, bookmarks, settings (Hive storage)
 - **Optional Cloud**: Google Drive integration, AI chat (Firebase Genkit)
 
+## Core Development Principles
+
+**TDD IS MANDATORY** - All functions, modules, and features MUST follow Test-Driven Development:
+1. Write failing test first
+2. Write minimal code to pass
+3. Refactor
+4. Repeat
+
+No code is considered complete without tests first.
+
 ## Project Structure
 
 ```

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the chatWithDocument method from the PdfAIService class, for the Dart programming language.">
+  <title>chatWithDocument method - PdfAIService class - pdf_ai_service library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../core_services_pdf_ai_service/">core&#47;services&#47;pdf_ai_service.dart</a></li>
+    <li><a href="../../core_services_pdf_ai_service/PdfAIService-class.html">PdfAIService</a></li>
+    <li class="self-crumb">chatWithDocument method</li>
+  </ol>
+  <div class="self-name">chatWithDocument</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="core_services_pdf_ai_service&#47;PdfAIService-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">chatWithDocument</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/flutter_test/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+<span class="name ">chatWithDocument</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="chatWithDocument-param-pdfText"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">pdfText</span>, </span></li>
+<li><span class="parameter" id="chatWithDocument-param-question"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">question</span>, </span></li>
+<li><span class="parameter" id="chatWithDocument-param-history"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../features_reader_presentation_providers_pdf_chat_state/ChatMessage-class.html">ChatMessage</a></span>&gt;</span></span> <span class="parameter-name">history</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Sends a question about the PDF content and receives an AI response.</p>
+<p>Parameters:</p>
+<ul>
+<li><code>pdfText</code>: The extracted text content from the PDF</li>
+<li><code>question</code>: The user's question</li>
+<li><code>history</code>: Optional chat history for context</li>
+</ul>
+<p>Returns the AI response as a string.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;String&gt; chatWithDocument(
+  String pdfText,
+  String question,
+  List&lt;ChatMessage&gt; history,
+) async {
+  _requireAuth();
+
+  AppLogger.i(&#39;💡 ========================================&#39;);
+  AppLogger.i(&#39;💡 === CHAT WITH DOCUMENT START ===&#39;);
+  AppLogger.i(&#39;💡 ========================================&#39;);
+  AppLogger.i(&#39;📅 Timestamp: ${DateTime.now().toIso8601String()}&#39;);
+  AppLogger.i(&#39;📄 PDF text length: ${pdfText.length} chars&#39;);
+  AppLogger.i(&#39;❓ User question: $question&#39;);
+  AppLogger.i(&#39;💬 Chat history length: ${history.length} messages&#39;);
+
+  try {
+    &#47;&#47; Truncate PDF text if too long
+    final truncatedText = pdfText.length &gt; maxContextChars
+        ? &#39;${pdfText.substring(0, maxContextChars)}\n\n[Content truncated...]&#39;
+        : pdfText;
+
+    AppLogger.i(&#39;✂️  Truncated text length: ${truncatedText.length} chars&#39;);
+
+    &#47;&#47; Filter history to only include actual chat messages (exclude summary&#47;keypoints)
+    &#47;&#47; Only include messages where user asked a question, not &quot;Generate summary&quot; etc.
+    final filteredHistory = history.where((msg) {
+      &#47;&#47; Include user messages that look like actual questions (not quick actions)
+      if (msg.isUser) {
+        final content = msg.content.toLowerCase().trim();
+        &#47;&#47; Exclude quick action messages
+        if (content.startsWith(&#39;generate a summary&#39;) ||
+            content.startsWith(&#39;what are the key points&#39;) ||
+            content.startsWith(&#39;extract and summarize&#39;)) {
+          return false;
+        }
+        &#47;&#47; Include if it&#39;s a question or actual chat
+        return content.contains(&#39;?&#39;) ||
+            content.length &lt; 200; &#47;&#47; Short messages are likely questions
+      }
+      &#47;&#47; Only include assistant responses that are actual chat (not summaries)
+      if (!msg.isUser) {
+        final content = msg.content.toLowerCase();
+        &#47;&#47; Exclude summary&#47;keypoint responses (they start with headings&#47;bullets)
+        if (content.startsWith(&#39;##&#39;) || &#47;&#47; Markdown headings
+            content.startsWith(&#39;summary:&#39;) ||
+            content.startsWith(&#39;key points&#39;) ||
+            content.startsWith(&#39;•&#39;)) {
+          return false;
+        }
+        &#47;&#47; Exclude very long AI responses (likely summaries&#47;extracts)
+        if (content.length &gt; 1000) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+
+    AppLogger.i(&#39;📝 Filtered history: ${filteredHistory.length} messages (from ${history.length} total)&#39;);
+
+    &#47;&#47; Limit to last 10 messages to avoid overwhelming the context
+    final limitedHistory = filteredHistory.length &gt; 10
+        ? filteredHistory.sublist(filteredHistory.length - 10)
+        : filteredHistory;
+
+    AppLogger.i(&#39;📝 Sending last ${limitedHistory.length} messages as history&#39;);
+
+    &#47;&#47; Convert chat history to JSON format
+    final historyJson = limitedHistory
+        .map(
+          (m) =&gt; {&#39;role&#39;: m.isUser ? &#39;user&#39; : &#39;model&#39;, &#39;content&#39;: m.content},
+        )
+        .toList();
+
+    AppLogger.i(&#39;📤 Calling Firebase Cloud Function: chatFlow&#39;);
+
+    &#47;&#47; Note: Firebase Auth token is automatically included by the SDK
+    final result = await _functions.httpsCallable(&#39;chatFlow&#39;).call({
+      &#39;pdfText&#39;: truncatedText,
+      &#39;question&#39;: question,
+      &#39;history&#39;: historyJson,
+    });
+
+    AppLogger.i(&#39;✅ Cloud Function called successfully&#39;);
+
+    if (result.data[&#39;model&#39;] != null) {
+      AppLogger.i(&#39;🤖 Model used: ${result.data[&#39;model&#39;]}&#39;);
+    }
+
+    final response = result.data[&#39;response&#39;] as String?;
+    if (response == null || response.isEmpty) {
+      AppLogger.e(&#39;❌ Empty response from AI service&#39;);
+      throw PdfAiException(
+        &#39;AI service returned empty chat response. &#39;
+        &#39;Response keys: ${result.data.keys.join(&quot;, &quot;)}. &#39;
+        &#39;Troubleshooting: Check if the question is valid and model is available.&#39;,
+      );
+    }
+
+    AppLogger.i(&#39;✅ Chat response generated successfully&#39;);
+    AppLogger.i(&#39;📊 Response length: ${response.length} chars&#39;);
+    AppLogger.i(&#39;📝 Response preview: ${response.substring(0, 100)}...&#39;);
+    AppLogger.i(&#39;💡 ========================================&#39;);
+    AppLogger.i(&#39;💡 ✅ CHAT COMPLETED SUCCESSFULLY!&#39;);
+    AppLogger.i(&#39;💡 ========================================&#39;);
+
+    return response;
+  } on FirebaseFunctionsException catch (e, stackTrace) {
+    logOperationFailure(&#39;Chat with document&#39;, e, stackTrace);
+    throw _parseFirebaseError(e);
+  } catch (e, stackTrace) {
+    logOperationFailure(&#39;Chat with document&#39;, e, stackTrace);
+    throw PdfAiException(
+      &#39;Failed to get AI chat response. &#39;
+      &#39;Error: ${e.runtimeType}: $e. &#39;
+      &#39;Action: Verify your question is clear and try again.&#39;,
+    );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../core_services_pdf_ai_service/">pdf_ai_service</a></li>
+    <li><a href="../../core_services_pdf_ai_service/PdfAIService-class.html">PdfAIService</a></li>
+    <li class="self-crumb">chatWithDocument method</li>
+</ol>
+
+    <h5>PdfAIService class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    pdf_reader_app
+      1.0.0+1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

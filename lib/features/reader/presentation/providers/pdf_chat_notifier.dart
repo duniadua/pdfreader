@@ -409,6 +409,22 @@ class PdfChatNotifier extends _$PdfChatNotifier {
       return;
     }
 
+    // Check if user is rate limited
+    if (state.isRateLimited) {
+      AppLogger.w('⏳ User is rate limited, cannot send message');
+      final rateLimit = state.rateLimitInfo;
+      final remaining = rateLimit?.remainingSeconds ?? 0;
+      state = PdfChatState.visible(
+        currentPdfPath: state.currentPdfPath,
+        messages: state.messages,
+        extractedText: state.extractedText,
+        error: rateLimit?.message ??
+            'Mohon tunggu $remaining detik sebelum mencoba lagi.',
+        rateLimitInfo: rateLimit,
+      );
+      return;
+    }
+
     // Ensure we have extracted text
     if (state.extractedText == null && !state.isExtractingText) {
       // Need to extract text first
@@ -501,6 +517,33 @@ class PdfChatNotifier extends _$PdfChatNotifier {
           e,
           stackTrace,
         );
+
+        // Check if this is a rate limit error
+        if (e is PdfAiException && e.isRateLimit && e.retryAfter != null) {
+          AppLogger.w('⏳ Rate limit detected, setting rate limit info');
+          final rateLimitInfo = RateLimitInfo.fromSeconds(
+            e.retryAfter!,
+            e.message,
+          );
+
+          // Mark message as failed and set rate limit info
+          final failedMsg = ChatMessage.failed(message, id: userMessage.id);
+          final failedMessages = [
+            ...state.messages.sublist(0, state.messages.length - 1),
+            failedMsg,
+          ];
+
+          state = PdfChatState.visible(
+            currentPdfPath: state.currentPdfPath,
+            messages: failedMessages,
+            extractedText: state.extractedText,
+            rateLimitInfo: rateLimitInfo,
+          );
+
+          // Start countdown timer to clear rate limit when expired
+          _startRateLimitCountdown(e.retryAfter!);
+          return; // Don't retry on rate limit
+        }
 
         if (attempt >= maxRetries) {
           // All retries exhausted — mark as failed
@@ -854,6 +897,23 @@ class PdfChatNotifier extends _$PdfChatNotifier {
     final count = _pdfPathCache.length;
     _pdfPathCache.clear();
     AppLogger.i('Cleared all $count cached PDF paths');
+  }
+
+  /// Start countdown timer to clear rate limit when expired
+  void _startRateLimitCountdown(int seconds) {
+    AppLogger.i('⏱️  Starting rate limit countdown: $seconds seconds');
+
+    // Use Future.delayed to clear rate limit after it expires
+    Future.delayed(Duration(seconds: seconds + 1), () {
+      if (state.isRateLimited) {
+        AppLogger.i('✅ Rate limit expired, clearing rate limit info');
+        state = PdfChatState.visible(
+          currentPdfPath: state.currentPdfPath,
+          messages: state.messages,
+          extractedText: state.extractedText,
+        );
+      }
+    });
   }
 }
 

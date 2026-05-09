@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../features/debug/presentation/firebase_test_screen.dart';
 import '../../features/library/presentation/library_screen.dart';
 import '../../features/reader/presentation/pdf_reader_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String timeline = '/timeline';
   static const String cloud = '/cloud';
   static const String intentLoading = '/intent-loading';
+  static const String firebaseTest = '/firebase-test';
 }
 
 /// Error page for unmatched routes
@@ -128,6 +130,13 @@ GoRouter router(Ref ref) {
         path: AppRoutes.settings,
         pageBuilder: (context, state) =>
             const MaterialPage(child: SettingsScreen()),
+      ),
+
+      // Firebase Functions Test Screen (for debugging)
+      GoRoute(
+        path: AppRoutes.firebaseTest,
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: FirebaseTestScreen()),
       ),
 
       // Favorites (implemented in library tab)

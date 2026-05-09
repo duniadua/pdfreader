@@ -7,6 +7,21 @@
         {"fieldPath": "timestamp", "order": "ASCENDING"},
         {"fieldPath": "__name__", "order": "ASCENDING"}
       ]
+    },
+    {
+      "collectionGroup": "rate_limits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "shards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "updatedAt", "order": "ASCENDING"}
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the importPdf method from the LibraryNotifier class, for the Dart programming language.">
+  <title>importPdf method - LibraryNotifier class - library_notifier library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../features_library_presentation_providers_library_notifier/">features&#47;library&#47;presentation&#47;providers&#47;library_notifier.dart</a></li>
+    <li><a href="../../features_library_presentation_providers_library_notifier/LibraryNotifier-class.html">LibraryNotifier</a></li>
+    <li class="self-crumb">importPdf method</li>
+  </ol>
+  <div class="self-name">importPdf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="features_library_presentation_providers_library_notifier&#47;LibraryNotifier-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">importPdf</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/flutter_test/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">importPdf</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Import a PDF file from device storage</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; importPdf() async {
+  state = state.copyWith(isLoading: true, failure: null);
+
+  try {
+    &#47;&#47; Use FilePicker to select PDF file
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [&#39;pdf&#39;],
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) {
+      &#47;&#47; User cancelled
+      state = state.copyWith(isLoading: false);
+      &#47;&#47; Track cancelled import
+      AnalyticsService.instance.trackPdfImport(success: false);
+      return;
+    }
+
+    final file = result.files.first;
+    if (file.path == null) {
+      state = state.copyWith(
+        isLoading: false,
+        failure: const AppFailure(message: &#39;Unable to access selected file&#39;),
+      );
+      return;
+    }
+
+    &#47;&#47; Get file info
+    final filePath = file.path!;
+    final fileName = file.name;
+    final fileSize = File(filePath).lengthSync();
+
+    &#47;&#47; Validate file is a PDF
+    if (!filePath.toLowerCase().endsWith(&#39;.pdf&#39;)) {
+      state = state.copyWith(
+        isLoading: false,
+        failure: const AppFailure(message: &#39;Selected file is not a PDF&#39;),
+      );
+      &#47;&#47; Track failed import (invalid file type)
+      AnalyticsService.instance.trackPdfImport(success: false);
+      return;
+    }
+
+    &#47;&#47; Create new PDF document with default page count
+    &#47;&#47; Note: Page count will be updated when PDF is first opened
+    final pdfDocument = PdfDocument(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: fileName.replaceAll(&#39;.pdf&#39;, &#39;&#39;),
+      filePath: filePath,
+      fileSize: fileSize,
+      createdAt: DateTime.now(),
+      lastOpenedAt: DateTime.now(),
+      totalPages: 0, &#47;&#47; Will be updated on first open
+    );
+
+    &#47;&#47; Add to repository
+    final addResult = await _repository.addPdf(pdfDocument);
+
+    addResult.when(
+      failure: (error, stackTrace) {
+        AppLogger.e(&#39;Failed to import PDF&#39;, error, stackTrace);
+        state = state.copyWith(
+          isLoading: false,
+          failure: _handleAppFailure(error, stackTrace),
+        );
+      },
+      success: (addedPdf) async {
+        AppLogger.i(&#39;Successfully imported PDF: $fileName&#39;);
+        &#47;&#47; Track successful PDF import
+        AnalyticsService.instance.trackPdfImport(success: true);
+        &#47;&#47; Generate thumbnail in background
+        _repository.generateThumbnail(addedPdf.id).then((result) {
+          result.when(
+            success: (thumbnailPath) {
+              if (thumbnailPath != null) {
+                AppLogger.i(&#39;Thumbnail generated: $thumbnailPath for ${addedPdf.title}&#39;);
+                &#47;&#47; Invalidate cache for this PDF to force refresh from storage
+                _cache.invalidatePdf(addedPdf.id);
+                &#47;&#47; Refresh library to show thumbnail
+                loadLibrary();
+              } else {
+                AppLogger.w(
+                  &#39;Thumbnail generation returned null for ${addedPdf.title}&#39;,
+                );
+              }
+            },
+            failure: (error, stackTrace) {
+              AppLogger.e(&#39;Failed to generate thumbnail&#39;, error, stackTrace);
+              &#47;&#47; Still load library even if thumbnail failed
+              loadLibrary();
+            },
+          );
+        });
+        &#47;&#47; Load library immediately without waiting for thumbnail
+        loadLibrary();
+      },
+    );
+  } catch (e, st) {
+    AppLogger.e(&#39;Error importing PDF&#39;, e, st);
+    &#47;&#47; Track failed import
+    AnalyticsService.instance.trackPdfImport(success: false);
+    state = state.copyWith(
+      isLoading: false,
+      failure: AppFailure(
+        message: &#39;Failed to import PDF: ${e.toString()}&#39;,
+        cause: e,
+        stackTrace: st,
+      ),
+    );
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">pdf_reader_app</a></li>
+    <li><a href="../../features_library_presentation_providers_library_notifier/">library_notifier</a></li>
+    <li><a href="../../features_library_presentation_providers_library_notifier/LibraryNotifier-class.html">LibraryNotifier</a></li>
+    <li class="self-crumb">importPdf method</li>
+</ol>
+
+    <h5>LibraryNotifier class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    pdf_reader_app
+      1.0.0+1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
